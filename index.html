@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💰 Finance Dashboard</title>
+<title>Finance Dashboard</title>
 <style>
 :root {
   color-scheme: light;
@@ -26,8 +26,10 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
 .h-title{font-size:15px;font-weight:700;}
 .h-date{font-size:11px;color:var(--muted);}
 .h-stats{display:flex;gap:14px;flex-wrap:wrap;}
+.h-stat{display:flex;flex-direction:column;}
 .h-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;}
 .h-stat-val{font-size:13px;font-weight:700;}
+.h-stat-sub{font-size:9px;color:var(--muted);margin-top:1px;}
 
 /* FILTER BAR */
 .filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 14px;position:sticky;top:var(--header-h);z-index:55;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
@@ -81,6 +83,26 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 .budget-layout{display:grid;gap:14px;}
 @media(min-width:520px){.budget-layout{grid-template-columns:1fr 175px;}}
 .chart-box{height:165px;position:relative;}
+
+/* DAILY TRACKER LIST */
+.daily-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.day-row{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;}
+.day-row:last-child{border-bottom:none;}
+.day-row:hover{background:var(--surface2);}
+.day-row.today{background:var(--blue-bg);}
+.day-row-date{flex:1;font-weight:600;display:flex;align-items:center;gap:6px;}
+.today-badge{font-size:9px;background:var(--blue);color:#fff;padding:2px 6px;border-radius:8px;font-weight:600;}
+.day-row-spent{font-size:11px;}
+.day-row-bal{font-weight:700;min-width:70px;text-align:right;}
+.day-detail{padding:10px 14px 14px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.daily-fixed-list{margin-bottom:10px;}
+.daily-sub-label{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;}
+.daily-item-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.daily-item-row:last-child{border-bottom:none;}
+.daily-item-label{flex:1;min-width:0;font-size:12px;font-weight:600;}
+.daily-item-meta{font-size:10px;color:var(--muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.daily-item-amt{font-weight:700;font-size:13px;display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.daily-empty{text-align:center;padding:14px 0;color:var(--muted);font-size:12px;}
 .gauge{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
 .gauge-lbl{width:72px;font-size:11px;font-weight:600;flex-shrink:0;}
 .gauge-track{flex:1;height:17px;background:var(--surface2);border-radius:4px;border:1px solid var(--border);position:relative;overflow:hidden;}
@@ -102,6 +124,7 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 .txn-table tbody tr:hover>td{background:var(--surface2);}
 .txn-total-row td{background:var(--surface2);font-weight:700;border-top:2px solid var(--border);}
 .txn-month-head td{background:var(--surface2);font-size:11px;font-weight:700;color:var(--muted);padding:4px 7px;}
+.txn-day-head td{border-top:1px solid var(--border);font-size:10px;font-weight:600;color:var(--muted);padding:5px 7px 2px;}
 .txn-items-row td{background:#fafbfc;padding:0;}
 .txn-items-inner{padding:8px 16px;display:flex;flex-wrap:wrap;gap:6px;}
 .item-chip{background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11px;padding:2px 8px;display:flex;gap:5px;align-items:center;}
@@ -233,12 +256,12 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 </head>
 <body>
 <div id="root"></div>
-<div class="toast" id="toast">✓ Saved</div>
+<div class="toast" id="toast">Saved</div>
 
 <!-- Add Charge Modal -->
 <div class="modal-overlay" id="charge-modal" style="display:none;" onclick="if(event.target===this)closeChargeModal()">
  <div class="modal-box">
-  <div class="modal-title" id="charge-modal-title">💳 Add Charge</div>
+  <div class="modal-title" id="charge-modal-title">Add Charge</div>
   <div class="modal-row">
    <div class="modal-field"><label class="modal-label">Date</label><input class="modal-input" id="c-date" type="date"/></div>
    <div class="modal-field"><label class="modal-label">Total Amount ($)</label><input class="modal-input" id="c-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="syncItemTotal()"/></div>
@@ -255,7 +278,7 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
    </div>
   </div>
   <hr class="modal-sep"/>
-  <div class="toggle-row" onclick="toggleItems()">📋 <span id="items-toggle-lbl">Add receipt items (optional)</span></div>
+  <div class="toggle-row" onclick="toggleItems()"><span id="items-toggle-lbl">Add receipt items (optional)</span></div>
   <div id="items-section" style="display:none;">
    <div class="items-list" id="items-list"></div>
    <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="addItemRow()">＋ Add Item</button>
@@ -288,9 +311,9 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 <!-- Add Category Modal -->
 <div class="modal-overlay" id="cat-modal" style="display:none;" onclick="if(event.target===this)closeCatModal()">
  <div class="modal-box">
-  <div class="modal-title">＋ Add Category</div>
+  <div class="modal-title">Add Category</div>
   <div class="modal-row">
-   <div class="modal-field" style="max-width:80px;"><label class="modal-label">Emoji</label><input class="modal-input" id="m-emoji" value="✨" maxlength="4"/></div>
+   <div class="modal-field" style="max-width:100px;"><label class="modal-label">Icon</label><select class="modal-select" id="m-icon"></select></div>
    <div class="modal-field"><label class="modal-label">Name</label><input class="modal-input" id="m-label" placeholder="Category name"/></div>
   </div>
   <div class="modal-row">
@@ -312,21 +335,21 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 <!-- Add Month Modal -->
 <div class="modal-overlay" id="month-modal" style="display:none;" onclick="if(event.target===this)closeMonthModal()">
  <div class="modal-box">
-  <div class="modal-title">📅 Add a Month</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">New months start at $0. Add charges via 💳 button.</p>
+  <div class="modal-title">Add a Month</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">New months start at $0. Add charges via the charge button.</p>
   <div class="mo-grid" id="mo-pick-grid"></div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeMonthModal()">Cancel</button></div>
  </div>
 </div>
 
 <!-- FABs -->
-<button class="fab" id="fab-charge" onclick="openChargeModal()" title="Add a charge">💳</button>
-<button class="fab" id="fab-cat"    onclick="openCatModal()"    title="Add category">＋</button>
-<button class="fab" id="fab-chat"   onclick="toggleChat()"      title="Finance assistant">💬</button>
+<button class="fab" id="fab-charge" onclick="openChargeModal()" title="Add a charge"></button>
+<button class="fab" id="fab-cat"    onclick="openCatModal()"    title="Add category"></button>
+<button class="fab" id="fab-chat"   onclick="toggleChat()"      title="Finance assistant"></button>
 
 <!-- Chat -->
 <div id="chat-panel" style="display:none;">
- <div class="chat-head"><span class="chat-head-title">💬 Finance Assistant</span><button class="chat-close" onclick="toggleChat()">✕</button></div>
+ <div class="chat-head"><span class="chat-head-title">Finance Assistant</span><button class="chat-close" onclick="toggleChat()">✕</button></div>
  <div id="chat-messages"></div>
  <div class="chat-input-row"><input id="chat-input" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')sendChat()"/><button class="chat-send" onclick="sendChat()">Send</button></div>
 </div>
@@ -336,15 +359,68 @@ const ALL_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','N
 const H1=[0,1,2,3,4,5];
 const STORAGE_KEY='nf_v8';
 
+// ── ICONS ─────────────────────────────────────────────
+// Minimal monochrome line icons (currentColor stroke) replacing emoji throughout.
+const ICONS={
+  home:'<path d="M3 8.5L9 3l6 5.5M4.5 7.5V15h9V7.5"/>',
+  cart:'<circle cx="6.5" cy="15" r="1.2"/><circle cx="13" cy="15" r="1.2"/><path d="M2 3h2l1.6 9.2a1.5 1.5 0 001.5 1.3h6.4a1.5 1.5 0 001.5-1.2L16.5 6H4.7"/>',
+  bolt:'<path d="M9.5 2L4 10.5h4L7 16l6.5-9H9.5z"/>',
+  wifi:'<path d="M3 7a9 9 0 0112 0M5.5 9.7a5.5 5.5 0 017 0M8 12.4a2 2 0 012 0"/>',
+  phone:'<rect x="5" y="2" width="8" height="14" rx="1.6"/><path d="M8 13.2h2"/>',
+  shield:'<path d="M9 2.3l6 2v4.4c0 4-2.6 6.8-6 7.9-3.4-1.1-6-3.9-6-7.9V4.3z"/>',
+  heart:'<path d="M9 15.5S3 11.6 3 7.3A3.3 3.3 0 019 5.2a3.3 3.3 0 016 2.1c0 4.3-6 8.2-6 8.2z"/>',
+  brain:'<path d="M7 3.2a2.6 2.6 0 00-2.6 2.6 2.6 2.6 0 00-1.4 4.6c-.1.3-.15.6-.15.95A2.6 2.6 0 007 15.3M11 3.2a2.6 2.6 0 012.6 2.6 2.6 2.6 0 011.4 4.6c.1.3.15.6.15.95A2.6 2.6 0 0111 15.3M9 3.4v11.9"/>',
+  paw:'<circle cx="9" cy="12" r="2.6"/><circle cx="4.3" cy="7.5" r="1.3"/><circle cx="7.3" cy="4.6" r="1.3"/><circle cx="10.7" cy="4.6" r="1.3"/><circle cx="13.7" cy="7.5" r="1.3"/>',
+  utensils:'<path d="M5 2v6a1.6 1.6 0 003.2 0V2M6.6 8v8M13 2c-1.2 0-2 1.5-2 4s.8 3.5 2 3.5V16"/>',
+  bag:'<path d="M5 6h8l.8 9.2a1 1 0 01-1 1.1H5.2a1 1 0 01-1-1.1L5 6z"/><path d="M6.6 6V5a2.4 2.4 0 014.8 0v1"/>',
+  sparkle:'<path d="M9 2l1.2 4.8L15 8l-4.8 1.2L9 14l-1.2-4.8L3 8l4.8-1.2z"/>',
+  box:'<path d="M3 6l6-3.2L15 6v6.4L9 15.6 3 12.4z"/><path d="M3 6l6 3 6-3M9 9v6.6"/>',
+  car:'<path d="M3.5 11.5l1-4a2 2 0 011.9-1.5h5.2a2 2 0 011.9 1.5l1 4"/><rect x="2.5" y="11.5" width="13" height="3.2" rx="1"/><circle cx="5.5" cy="14.7" r="1.1"/><circle cx="12.5" cy="14.7" r="1.1"/>',
+  dumbbell:'<path d="M4 9h10M2.5 7v4M15.5 7v4M4.5 6v6M13.5 6v6"/>',
+  masks:'<circle cx="6.3" cy="9" r="4"/><circle cx="11.7" cy="9" r="4"/>',
+  palette:'<path d="M9 2.5a6.5 6.5 0 100 13c1 0 1.4-.8.9-1.6-.4-.6.1-1.4.9-1.4H12a3.5 3.5 0 003.5-3.5c0-3.6-3-6.5-6.5-6.5z"/><circle cx="6.2" cy="8" r=".7" fill="currentColor" stroke="none"/><circle cx="8.5" cy="5.8" r=".7" fill="currentColor" stroke="none"/><circle cx="11.2" cy="7" r=".7" fill="currentColor" stroke="none"/>',
+  tv:'<rect x="2.5" y="4" width="13" height="9" rx="1.2"/><path d="M6.5 16h5M9 13v3"/>',
+  cloud:'<path d="M5.8 13.5a3.3 3.3 0 01-.3-6.6 4 4 0 017.7-1.3A3.2 3.2 0 0113 13.5H5.8z"/>',
+  creditcard:'<rect x="2.2" y="4.5" width="13.6" height="9.5" rx="1.4"/><path d="M2.2 7.5h13.6"/>',
+  bank:'<path d="M2.5 7l6.5-4 6.5 4M3 7.3h12M3.8 7.3v6M7 7.3v6M11 7.3v6M14.2 7.3v6M2.5 14.5h13"/>',
+  refresh:'<path d="M14.5 5.5A6 6 0 004.2 4.6M3.5 12.5a6 6 0 0010.3.9"/><path d="M14.5 2.5v3h-3M3.5 15.5v-3h3"/>',
+  piggy:'<path d="M4 9.3a4.8 4.8 0 019.4-1.4h1.1l.5 1.5-1.2.7v1.6l-1.2 1v1.6H10.6v-1H6.8v1H4.6v-2A3.6 3.6 0 014 9.3z"/><circle cx="6.7" cy="9" r=".6" fill="currentColor" stroke="none"/>',
+  barchart:'<path d="M3 15.5V10M9 15.5V5M15 15.5V8.5"/>',
+  calendar:'<rect x="2.5" y="4" width="13" height="11" rx="1.2"/><path d="M2.5 7.5h13M6 2.5v3M12 2.5v3"/>',
+  target:'<circle cx="9" cy="9" r="6.2"/><circle cx="9" cy="9" r="3.4"/><circle cx="9" cy="9" r=".8" fill="currentColor" stroke="none"/>',
+  receipt:'<path d="M4.5 2.5h9v13l-1.8-1.2-1.8 1.2-1.9-1.2-1.8 1.2-1.7-1.2z"/><path d="M6.5 6h5M6.5 8.6h5M6.5 11.2h3"/>',
+  gear:'<circle cx="9" cy="9" r="2.6"/><path d="M9 2.6v1.7M9 12.7v1.7M15.4 9h-1.7M4.3 9H2.6M13.4 4.6l-1.2 1.2M5.8 12.2l-1.2 1.2M13.4 13.4l-1.2-1.2M5.8 5.8L4.6 4.6"/>',
+  folder:'<path d="M2.5 5.2A1.2 1.2 0 013.7 4h3.4l1.4 1.6h5.8a1.2 1.2 0 011.2 1.2v6a1.2 1.2 0 01-1.2 1.2H3.7a1.2 1.2 0 01-1.2-1.2z"/>',
+  flame:'<path d="M9 16c-3 0-5-2-5-4.6 0-2 1.3-3 1.9-4.6.4 1 1 1.4 1.6 1.4-.2-2.4.6-4.7 2.5-6 0 2 .3 3.6 1.8 5 1.2 1.1 2.2 2.5 2.2 4.2 0 2.6-2 4.6-5 4.6z"/>',
+  lock:'<rect x="3.5" y="8" width="11" height="7.5" rx="1.2"/><path d="M5.8 8V5.5a3.2 3.2 0 016.4 0V8"/>',
+  wallet:'<path d="M2.5 5.5a1.4 1.4 0 011.4-1.4h9.2A1.4 1.4 0 0114.5 5.5v.7H2.5z"/><path d="M2.5 6.2h11.6a1.4 1.4 0 011.4 1.4v5.5a1.4 1.4 0 01-1.4 1.4H3.9a1.4 1.4 0 01-1.4-1.4z"/><circle cx="12" cy="9.7" r=".9" fill="currentColor" stroke="none"/>',
+  plus:'<path d="M9 3.5v11M3.5 9h11"/>',
+  message:'<path d="M2.5 4.5h13v8H7.2L4 15.5v-2.9H2.5z"/>',
+  trash:'<path d="M3.5 5.5h11M7 5.5V4a1 1 0 011-1h2a1 1 0 011 1v1.5M5.2 5.5l.6 9a1.2 1.2 0 001.2 1.1h4a1.2 1.2 0 001.2-1.1l.6-9"/>',
+  download:'<path d="M9 2.5v9M5.3 8.3L9 12l3.7-3.7M3.5 14.5h11"/>',
+  upload:'<path d="M9 15.5v-9M5.3 9.7L9 6l3.7 3.7M3.5 3.5h11"/>',
+  alert:'<path d="M9 2.5L16 15H2z"/><path d="M9 7v3.2"/><circle cx="9" cy="12.4" r=".6" fill="currentColor" stroke="none"/>',
+  check:'<path d="M3.5 9.5l3.5 3.5 7-8"/>',
+  chevron:'<path d="M5 7l4 4 4-4"/>',
+  chevronup:'<path d="M5 11l4-4 4 4"/>',
+  pencil:'<path d="M11.5 2.9l3.6 3.6-8.6 8.6-4 .4.4-4z"/><path d="M10 4.4l3.6 3.6"/>',
+};
+function icon(slug,size){
+  size=size||16;
+  const inner=ICONS[slug]||ICONS.folder;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;">${inner}</svg>`;
+}
+const CAT_ICON_FALLBACK={N:'folder',W:'bag',S:'piggy'};
+
 const DEFAULT_CARDS=[
-  {id:'amex',   emoji:'💳',name:'Amex',           cc:true,  dueDay:15},
-  {id:'c1cc',   emoji:'💳',name:'CapOne CC 6110', cc:true,  dueDay:22},
-  {id:'bofa',   emoji:'🏛️',name:'Bank of America', cc:true,  dueDay:null},
-  {id:'ch_cc',  emoji:'💳',name:'Chase CC',        cc:true,  dueDay:null},
-  {id:'ch0264', emoji:'🔄',name:'Chase BT 0264',  cc:true,  dueDay:5},
-  {id:'c1chk',  emoji:'🏦',name:'CapOne Checking',cc:false, dueDay:null},
-  {id:'c1hysa', emoji:'💰',name:'CapOne HYSA',    cc:false, dueDay:null},
-  {id:'ch1581', emoji:'🎨',name:'Chase 1581',     cc:false, dueDay:null},
+  {id:'amex',   icon:'creditcard',name:'Amex',           cc:true,  dueDay:15,apr:null},
+  {id:'c1cc',   icon:'creditcard',name:'CapOne CC 6110', cc:true,  dueDay:22,apr:null},
+  {id:'bofa',   icon:'bank',      name:'Bank of America', cc:true,  dueDay:null,apr:null},
+  {id:'ch_cc',  icon:'creditcard',name:'Chase CC',        cc:true,  dueDay:null,apr:null},
+  {id:'ch0264', icon:'refresh',   name:'Chase BT 0264',  cc:true,  dueDay:5,apr:null},
+  {id:'c1chk',  icon:'bank',      name:'CapOne Checking',cc:false, dueDay:null},
+  {id:'c1hysa', icon:'piggy',     name:'CapOne HYSA',    cc:false, dueDay:null},
+  {id:'ch1581', icon:'palette',   name:'Chase 1581',     cc:false, dueDay:null},
 ];
 
 const DEFAULT_JUSTIFICATIONS=[
@@ -361,37 +437,37 @@ const DEFAULT={
   cards:JSON.parse(JSON.stringify(DEFAULT_CARDS)),
   justifications:[...DEFAULT_JUSTIFICATIONS],
   categories:[
-    {id:'rent',    emoji:'🏠',label:'Rent',               type:'N',monthly:3150,mo:{0:3150,1:3150,2:3150,3:3150,4:3150,5:4975},fixed:true},
-    {id:'grocery', emoji:'🛒',label:'Groceries',          type:'N',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
-    {id:'elec',    emoji:'💡',label:'Electricity (ConEd)', type:'N',monthly:100, mo:{0:100,1:100,2:100,3:100,4:100,5:100},fixed:true,chargeDay:29},
-    {id:'internet',emoji:'🌐',label:'Internet (Verizon)', type:'N',monthly:89.99,  mo:{0:89.99,1:89.99,2:89.99,3:89.99,4:89.99,5:89.99},fixed:true,chargeDay:22},
-    {id:'phone',   emoji:'📱',label:'Phone',              type:'N',monthly:42,     mo:{0:42,1:42,2:42,3:42,4:42,5:42},fixed:true,chargeDay:12},
-    {id:'petins',  emoji:'🐾',label:'Pet Insurance',      type:'N',monthly:78.35,  mo:{0:78.35,1:78.35,2:78.35,3:78.35,4:78.35,5:78.35},fixed:true,chargeDay:9},
-    {id:'renins',  emoji:'🛡️',label:'Renter Insurance',   type:'N',monthly:22.75,  mo:{0:22.75,1:22.75,2:22.75,3:22.75,4:22.75,5:22.75},fixed:true,chargeDay:12},
-    {id:'health',  emoji:'🏥',label:'Healthcare',         type:'N',monthly:285, mo:{0:285,1:285,2:285,3:285,4:285,5:285},fixed:false},
-    {id:'therapy', emoji:'🧠',label:'Therapy (Gotham)',   type:'N',monthly:180, mo:{0:180,1:180,2:180,3:180,4:180,5:180},fixed:false},
-    {id:'dog',     emoji:'🐶',label:'Dog Daycare/Vet',    type:'N',monthly:215, mo:{0:215,1:215,2:215,3:215,4:215,5:215},fixed:false},
-    {id:'dining',  emoji:'🍽️',label:'Dining Out',         type:'W',monthly:386, mo:{0:386,1:386,2:386,3:386,4:386,5:386},fixed:false},
-    {id:'shopping',emoji:'🛍️',label:'Shopping',           type:'W',monthly:567, mo:{0:567,1:567,2:567,3:567,4:567,5:567},fixed:false},
-    {id:'beauty',  emoji:'💅',label:'Beauty & Skincare',  type:'W',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
-    {id:'amazon',  emoji:'📦',label:'Amazon',             type:'W',monthly:378, mo:{0:378,1:378,2:378,3:378,4:378,5:378},fixed:false},
-    {id:'uber',    emoji:'🚗',label:'Uber',               type:'W',monthly:142, mo:{0:142,1:142,2:142,3:142,4:142,5:142},fixed:false},
-    {id:'fitness', emoji:'🏋️',label:'Fitness',            type:'W',monthly:50,  mo:{0:50,1:50,2:50,3:50,4:50,5:50},fixed:false},
-    {id:'entertain',emoji:'🎭',label:'Entertainment',     type:'W',monthly:80,  mo:{0:80,1:80,2:80,3:80,4:80,5:80},fixed:false},
-    {id:'art',     emoji:'🎨',label:'Art / Work Expenses',type:'W',monthly:60,  mo:{0:60,1:60,2:60,3:60,4:60,5:60},fixed:false},
-    {id:'hbo',     emoji:'📺',label:'HBO Max',             type:'W',monthly:2.99,  mo:{0:2.99,1:2.99,2:2.99,3:2.99,4:2.99,5:2.99},fixed:true,chargeDay:28},
-    {id:'appletv', emoji:'🍎',label:'Apple TV+',          type:'W',monthly:12.99, mo:{0:12.99,1:12.99,2:12.99,3:12.99,4:12.99,5:12.99},fixed:true,chargeDay:27},
-    {id:'icloud',  emoji:'☁️',label:'iCloud',             type:'W',monthly:9.99,  mo:{0:9.99,1:9.99,2:9.99,3:9.99,4:9.99,5:9.99},fixed:true,chargeDay:1},
+    {id:'rent',    icon:'home',    label:'Rent',               type:'N',monthly:3150,mo:{0:3150,1:3150,2:3150,3:3150,4:3150,5:4975},fixed:true},
+    {id:'grocery', icon:'cart',    label:'Groceries',          type:'N',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
+    {id:'elec',    icon:'bolt',    label:'Electricity (ConEd)', type:'N',monthly:100, mo:{0:100,1:100,2:100,3:100,4:100,5:100},fixed:true,chargeDay:29},
+    {id:'internet',icon:'wifi',    label:'Internet (Verizon)', type:'N',monthly:89.99,  mo:{0:89.99,1:89.99,2:89.99,3:89.99,4:89.99,5:89.99},fixed:true,chargeDay:22},
+    {id:'phone',   icon:'phone',   label:'Phone',              type:'N',monthly:42,     mo:{0:42,1:42,2:42,3:42,4:42,5:42},fixed:true,chargeDay:12},
+    {id:'petins',  icon:'shield',  label:'Pet Insurance',      type:'N',monthly:78.35,  mo:{0:78.35,1:78.35,2:78.35,3:78.35,4:78.35,5:78.35},fixed:true,chargeDay:9},
+    {id:'renins',  icon:'shield',  label:'Renter Insurance',   type:'N',monthly:22.75,  mo:{0:22.75,1:22.75,2:22.75,3:22.75,4:22.75,5:22.75},fixed:true,chargeDay:12},
+    {id:'health',  icon:'heart',   label:'Healthcare',         type:'N',monthly:285, mo:{0:285,1:285,2:285,3:285,4:285,5:285},fixed:false},
+    {id:'therapy', icon:'brain',   label:'Therapy (Gotham)',   type:'N',monthly:180, mo:{0:180,1:180,2:180,3:180,4:180,5:180},fixed:false},
+    {id:'dog',     icon:'paw',     label:'Dog Daycare/Vet',    type:'N',monthly:215, mo:{0:215,1:215,2:215,3:215,4:215,5:215},fixed:false},
+    {id:'dining',  icon:'utensils',label:'Dining Out',         type:'W',monthly:386, mo:{0:386,1:386,2:386,3:386,4:386,5:386},fixed:false},
+    {id:'shopping',icon:'bag',     label:'Shopping',           type:'W',monthly:567, mo:{0:567,1:567,2:567,3:567,4:567,5:567},fixed:false},
+    {id:'beauty',  icon:'sparkle', label:'Beauty & Skincare',  type:'W',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
+    {id:'amazon',  icon:'box',     label:'Amazon',             type:'W',monthly:378, mo:{0:378,1:378,2:378,3:378,4:378,5:378},fixed:false},
+    {id:'uber',    icon:'car',     label:'Uber',               type:'W',monthly:142, mo:{0:142,1:142,2:142,3:142,4:142,5:142},fixed:false},
+    {id:'fitness', icon:'dumbbell',label:'Fitness',            type:'W',monthly:50,  mo:{0:50,1:50,2:50,3:50,4:50,5:50},fixed:false},
+    {id:'entertain',icon:'masks',  label:'Entertainment',     type:'W',monthly:80,  mo:{0:80,1:80,2:80,3:80,4:80,5:80},fixed:false},
+    {id:'art',     icon:'palette', label:'Art / Work Expenses',type:'W',monthly:60,  mo:{0:60,1:60,2:60,3:60,4:60,5:60},fixed:false},
+    {id:'hbo',     icon:'tv',      label:'HBO Max',             type:'W',monthly:2.99,  mo:{0:2.99,1:2.99,2:2.99,3:2.99,4:2.99,5:2.99},fixed:true,chargeDay:28},
+    {id:'appletv', icon:'tv',      label:'Apple TV+',          type:'W',monthly:12.99, mo:{0:12.99,1:12.99,2:12.99,3:12.99,4:12.99,5:12.99},fixed:true,chargeDay:27},
+    {id:'icloud',  icon:'cloud',   label:'iCloud',             type:'W',monthly:9.99,  mo:{0:9.99,1:9.99,2:9.99,3:9.99,4:9.99,5:9.99},fixed:true,chargeDay:1},
   ],
   accounts:[
-    {id:'amex',  emoji:'💳',label:'Amex',               role:'Main CC — carrying balance'},
-    {id:'c1cc',  emoji:'💳',label:'CapOne CC (6110)',    role:'Personal credit card'},
-    {id:'bofa',  emoji:'🏛️',label:'Bank of America CC', role:'Personal credit card'},
-    {id:'ch_cc', emoji:'💳',label:'Chase CC',            role:'Personal credit card'},
-    {id:'ch0264',emoji:'🔄',label:'Chase BT (0264)',     role:'Balance transfer card'},
-    {id:'c1chk', emoji:'🏦',label:'CapOne Checking',    role:'Main checking — Consensys payroll'},
-    {id:'c1hysa',emoji:'💰',label:'CapOne HYSA (5375)', role:'Emergency fund @ 3.10% APY'},
-    {id:'ch1581',emoji:'🎨',label:'Chase (1581)',        role:'Art business checking'},
+    {id:'amex',  icon:'creditcard',label:'Amex',               role:'Main CC — carrying balance'},
+    {id:'c1cc',  icon:'creditcard',label:'CapOne CC (6110)',    role:'Personal credit card'},
+    {id:'bofa',  icon:'bank',      label:'Bank of America CC', role:'Personal credit card'},
+    {id:'ch_cc', icon:'creditcard',label:'Chase CC',            role:'Personal credit card'},
+    {id:'ch0264',icon:'refresh',   label:'Chase BT (0264)',     role:'Balance transfer card'},
+    {id:'c1chk', icon:'bank',      label:'CapOne Checking',    role:'Main checking — Consensys payroll'},
+    {id:'c1hysa',icon:'piggy',     label:'CapOne HYSA (5375)', role:'Emergency fund @ 3.10% APY'},
+    {id:'ch1581',icon:'palette',   label:'Chase (1581)',        role:'Art business checking'},
   ],
   sectionOrder:['snapshot','dailytracker','budget','creditcards','transactions','settings','categories','leaks','fixed','accounts'],
   collapsed:['categories','leaks','fixed','accounts'],
@@ -406,7 +482,9 @@ let ccModalCardId=null;
 let selectedJustification='';
 let itemsOpen=false;
 let editingTxnId=null;
-let dailyViewDate=todayStr();
+let dailyViewYear=new Date().getFullYear();
+let dailyViewMonthIdx=new Date().getMonth();
+let dailyExpandedDate=todayStr();
 
 // ── PERSISTENCE ─────────────────────────────────────
 // No versioned migrations. ensureShape() runs on every load, is safe to run
@@ -431,7 +509,9 @@ function ensureShape(d){
   if(!d.accounts)d.accounts=JSON.parse(JSON.stringify(DEFAULT.accounts));
   if(!d.justifications)d.justifications=[...DEFAULT_JUSTIFICATIONS];
   if(!d.categories)d.categories=[];
-  d.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.fixed&&c.id!=='rent'&&!c.chargeDay)c.chargeDay=1;});
+  d.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.fixed&&c.id!=='rent'&&!c.chargeDay)c.chargeDay=1;if(!c.icon)c.icon=CAT_ICON_FALLBACK[c.type]||'folder';});
+  d.cards.forEach(c=>{if(!c.icon)c.icon=c.cc?'creditcard':'bank';});
+  d.accounts.forEach(a=>{if(!a.icon)a.icon='wallet';});
   if(!d.settings)d.settings={income:6061,dailyBudget:100,goals:{needs:50,wants:30,savings:20}};
   if(!d.settings.goals)d.settings.goals={needs:50,wants:30,savings:20};
   if(d.settings.dailyBudget===undefined)d.settings.dailyBudget=100;
@@ -521,10 +601,14 @@ function render(){
   bindDrag();
 }
 
+// Reserve red strictly for a genuine deficit (Surplus < 0, via clr()). A category
+// being over its target % is still a positive dollar figure — cap at yellow.
+const warnclr=(a,tgt,inv)=>inv?(a>=tgt?'c-green':'c-yellow'):(a<=tgt?'c-green':'c-yellow');
 function renderHeader(t,now){
-  const hs=(l,v,c)=>`<div class="h-stat"><span class="h-stat-label">${l}</span><span class="h-stat-val ${c}">${v}</span></div>`;
-  return`<header><div class="h-row1"><div class="h-title">💰 Finance Dashboard</div><div class="h-date">${now}</div></div>
-  <div class="h-stats">${hs('Income',$f(D.settings.income)+'/mo','c-blue')}${hs('Fixed',$f(t.fixedTotal)+'/mo','c-yellow')}${hs('Needs',pf(t.Np),gclr(t.N,t.Nt))}${hs('Wants',pf(t.Wp),gclr(t.W,t.Wt))}${hs('Savings',pf(t.Sp),t.S>=t.St?'c-green':'c-yellow')}${hs('Surplus',$f(t.left),clr(t.left))}</div></header>`;
+  const g=D.settings.goals;
+  const hs=(l,v,sub,c)=>`<div class="h-stat"><span class="h-stat-label">${l}</span><span class="h-stat-val ${c}">${v}</span>${sub?`<span class="h-stat-sub">${sub}</span>`:''}</div>`;
+  return`<header><div class="h-row1"><div class="h-title">Finance Dashboard</div><div class="h-date">${now}</div></div>
+  <div class="h-stats">${hs('Income',$f(D.settings.income)+'/mo','','c-blue')}${hs('Fixed',$f(t.fixedTotal)+'/mo','','c-yellow')}${hs('Needs',pf(t.Np)+' · '+$f(t.N),'target '+g.needs+'% · '+$f(t.Nt),warnclr(t.N,t.Nt,false))}${hs('Wants',pf(t.Wp)+' · '+$f(t.W),'target '+g.wants+'% · '+$f(t.Wt),warnclr(t.W,t.Wt,false))}${hs('Savings',pf(t.Sp)+' · '+$f(t.S),'target '+g.savings+'% · '+$f(t.St),warnclr(t.S,t.St,true))}${hs('Surplus',$f(t.left),'',clr(t.left))}</div></header>`;
 }
 
 function renderFilterBar(){
@@ -535,7 +619,7 @@ function renderFilterBar(){
   const lbl=active.length===0?'No months':active.length===6&&tracked.length===6?'H1 2026':active.map(mi=>ALL_MONTHS[mi]).join(', ')+' 2026';
   return`<div class="filter-bar"><span class="filter-label">Period:</span><div class="month-btns">${btns}</div>
   <div class="filter-sep"></div><button class="filter-chip" onclick="selectAll()">All</button><button class="filter-chip" onclick="selectNone()">None</button>
-  ${tracked.length<12?`<button class="filter-chip add-mo" onclick="openMonthModal()">＋ Month</button>`:''}
+  ${tracked.length<12?`<button class="filter-chip add-mo" onclick="openMonthModal()">${icon('plus',12)} Month</button>`:''}
   <span class="filter-period">${lbl}</span></div>`;
 }
 
@@ -543,12 +627,13 @@ function renderSec(id,t,i){
   const col=(D.collapsed||[]).includes(id);
   const first=i===0,last=i===D.sectionOrder.length-1;
   return`<div class="sc ${col?'collapsed':''}" data-sid="${id}">
-  <div class="sc-head"><span class="sc-drag">⠿</span><span class="sc-title">${secTitle(id)}</span>
+  <div class="sc-head"><span class="sc-drag">⠿</span>${icon(SEC_ICON[id]||'folder')}<span class="sc-title">${secTitle(id)}</span>
   <div class="sc-acts">${!first?`<button class="icon-btn" onclick="moveSection('${id}',-1)">↑</button>`:''}${!last?`<button class="icon-btn" onclick="moveSection('${id}',1)">↓</button>`:''}
   <button class="icon-btn" onclick="toggleCol('${id}')">${col?'▶':'▼'}</button></div></div>
   ${col?'':`<div class="sc-body">${secBody(id,t)}</div>`}</div>`;
 }
-const secTitle=id=>({snapshot:'📊 Snapshot',dailytracker:'📅 Daily Tracker',budget:'🎯 Budget',creditcards:'💳 Credit Cards',transactions:'🧾 Transactions',settings:'⚙️ Settings',categories:'📂 Categories',leaks:'🔥 Spending Leaks',fixed:'🔒 Fixed Commitments',accounts:'🏦 Accounts'})[id]||id;
+const SEC_ICON={snapshot:'barchart',dailytracker:'calendar',budget:'target',creditcards:'creditcard',transactions:'receipt',settings:'gear',categories:'folder',leaks:'flame',fixed:'lock',accounts:'wallet'};
+const secTitle=id=>({snapshot:'Snapshot',dailytracker:'Daily Tracker',budget:'Budget',creditcards:'Credit Cards',transactions:'Transactions',settings:'Settings',categories:'Categories',leaks:'Spending Leaks',fixed:'Fixed Commitments',accounts:'Accounts'})[id]||id;
 function secBody(id,t){switch(id){case'snapshot':return sectSnapshot(t);case'dailytracker':return sectDailyTracker();case'budget':return sectBudget(t);case'creditcards':return sectCreditCards();case'transactions':return sectTransactions();case'settings':return sectSettings();case'categories':return sectCategories(t);case'leaks':return sectLeaks(t);case'fixed':return sectFixed(t);case'accounts':return sectAccounts();default:return'';}}
 
 // ── DAILY TRACKER ────────────────────────────────────
@@ -600,114 +685,93 @@ function getDailyStats(dateStr){
 }
 
 function sectDailyTracker(){
-  const s=getDailyStats(dailyViewDate);
-  const today=todayStr(),isToday=dailyViewDate===today;
-  const d=new Date(dailyViewDate+'T00:00:00');
-  const dayLabel=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const year=dailyViewYear,month=dailyViewMonthIdx;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const monthLabel=new Date(year,month,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const today=todayStr();
   const catMap={};D.categories.forEach(c=>{catMap[c.id]=c;});
   const cardMap={};(D.cards||[]).forEach(c=>{cardMap[c.id]=c;});
   const sgn=v=>(v>=0?'+':'')+$f(v);
-  const todaysFixed=fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,s.daysInMonth)===s.dayNum);
 
-  // Navigation
   const nav=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <button class="btn btn-ghost btn-sm" onclick="dailyNav(-1)">← Prev</button>
-    <div style="flex:1;text-align:center;font-size:14px;font-weight:700;">
-      ${dayLabel}${isToday?'&ensp;<span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 7px;border-radius:10px;font-weight:600;">Today</span>':''}
-    </div>
-    <button class="btn btn-ghost btn-sm" onclick="dailyNav(1)">Next →</button>
+    <button class="btn btn-ghost btn-sm" onclick="dailyNav(-1)">${icon('chevron',12)} Prev</button>
+    <div style="flex:1;text-align:center;font-size:14px;font-weight:700;">${monthLabel}</div>
+    <button class="btn btn-ghost btn-sm" onclick="dailyNav(1)">Next ${icon('chevron',12)}</button>
   </div>`;
 
-  // 4-box summary
-  const carryClr=s.carryIn>=0?'c-green':'c-red';
-  const balClr=s.balanceEOD>=0?'c-green':'c-red';
-  const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
-    <div class="snap-box"><div class="snap-label">Carry In</div>
-      <div class="snap-val ${carryClr}">${sgn(s.carryIn)}</div>
-      <div class="snap-sub">${s.dayNum===1?'start of month':'from yesterday'}</div></div>
-    <div class="snap-box"><div class="snap-label">+ Budget</div>
-      <div class="snap-val c-blue">$${D.settings.dailyBudget}</div>
-      <div class="snap-sub">daily allowance</div></div>
-    <div class="snap-box"><div class="snap-label">− Spent</div>
-      <div class="snap-val ${s.todaySpend>0?'c-red':'c-muted'}">${$f(s.todaySpend)}</div>
-      <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?` + ${$f(s.fixedToday)} fixed bill${todaysFixed.length!==1?'s':''}`:''}</div></div>
-    <div class="snap-box"><div class="snap-label">= Balance</div>
-      <div class="snap-val ${balClr}">${sgn(s.balanceEOD)}</div>
-      <div class="snap-sub">${s.balanceEOD>=0?'carries to tomorrow ✓':'deficit ⚠'}</div></div>
-  </div>`;
-
-  // Day progress bar
-  const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
-  const barClr=s.balanceEOD>=0?'#1a7f37':'#cf222e';
-  const bar=`<div style="margin-bottom:10px;">
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;">
-      <span>Available: ${sgn(s.carryIn)} carry + $${s.db} = <strong style="color:var(--text);">${$f(s.availableToday)}</strong></span>
-      <span>${$f(s.todaySpend)} spent</span>
-    </div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;height:10px;overflow:hidden;">
-      <div style="height:100%;width:${pct}%;background:${barClr};border-radius:3px;"></div>
-    </div>
-  </div>`;
-
-  // Month context strip
-  const mbClr=s.monthBalance>=0?'c-green':'c-red';
+  // Month summary — cumulative stats through the last day of the viewed month
+  const lastDateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+  const ms=getDailyStats(lastDateStr);
+  const mbClr=ms.monthBalance>=0?'c-green':'c-yellow';
   const mStrip=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-bottom:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;align-items:center;">
-    <span><span class="c-muted">Pool:</span> <strong>${$f(s.monthPool)}</strong> <span class="c-muted">(${s.daysInMonth}d × $${ D.settings.dailyBudget})</span></span>
-    <span><span class="c-muted">Day ${s.dayNum}/${s.daysInMonth} — earned:</span> <strong>${$f(s.cumBudget)}</strong></span>
-    <span><span class="c-muted">Spent:</span> <strong class="${s.cumSpend>s.cumBudget?'c-red':'c-green'}">${$f(s.cumSpend)}</strong></span>
-    <span><span class="c-muted">Running:</span> <strong class="${mbClr}">${sgn(s.monthBalance)}</strong></span>
-    <span><span class="c-muted">Fixed bills this month (excl. rent):</span> <strong>${$f(s.fixedMonthTotal)}</strong></span>
+    <span><span class="c-muted">Pool:</span> <strong>${$f(ms.monthPool)}</strong> <span class="c-muted">(${daysInMonth}d × $${D.settings.dailyBudget})</span></span>
+    <span><span class="c-muted">Spent this month:</span> <strong class="${ms.cumSpend>ms.cumBudget?'c-yellow':'c-green'}">${$f(ms.cumSpend)}</strong></span>
+    <span><span class="c-muted">Running:</span> <strong class="${mbClr}">${sgn(ms.monthBalance)}</strong></span>
+    <span><span class="c-muted">Fixed bills this month (excl. rent):</span> <strong>${$f(ms.fixedMonthTotal)}</strong></span>
   </div>`;
 
-  // Fixed bills billing today (excl. rent) — shown separately from logged charges
-  const fixedList=todaysFixed.length?`<div style="margin-bottom:10px;">
-    <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;">🔒 Fixed bills charging today</div>
-    ${todaysFixed.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:16px;">${c.emoji}</span>
-      <div style="flex:1;min-width:0;font-size:12px;font-weight:600;">${c.label}</div>
-      <div style="font-weight:700;font-size:13px;">${$f(n(moVal(c,d.getMonth())),2)}</div>
-    </div>`).join('')}
-  </div>`:'';
+  const dayRows=[];
+  for(let day=1;day<=daysInMonth;day++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const s=getDailyStats(dateStr);
+    const isToday=dateStr===today;
+    const isExp=dailyExpandedDate===dateStr;
+    const dLabel=new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const balClr=s.balanceEOD>=0?'c-green':'c-yellow';
+    const todaysFixed=fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,daysInMonth)===day);
 
-  // Today's charge list
-  let txnList='';
-  if(!s.todayTxns.length){
-    txnList=`<div style="text-align:center;padding:18px 0;color:var(--muted);font-size:12px;">
-      No logged charges on this day.<br>
-      <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="openChargeModalForDate('${s.dateStr}')">💳 Add Charge for ${dayLabel}</button>
+    const summary=`<div class="day-row ${isToday?'today':''}" onclick="toggleDailyDay('${dateStr}')">
+      ${icon(isExp?'chevronup':'chevron',12)}
+      <span class="day-row-date">${dLabel}${isToday?'<span class="today-badge">Today</span>':''}</span>
+      <span class="day-row-spent c-muted">${$f(s.todaySpend)} spent</span>
+      <span class="day-row-bal ${balClr}">${sgn(s.balanceEOD)}</span>
     </div>`;
-  }else{
-    const rows=s.todayTxns.map(t=>{
-      const cat=catMap[t.catId]||{emoji:'?',label:t.catId};
-      const card=cardMap[t.cardId];
-      const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
-      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:16px;">${cat.emoji}</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:600;">${cat.label}</div>
-          ${meta?`<div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${meta}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-weight:700;font-size:13px;">${$f(n(t.amount),2)}</div>
-          <button class="btn btn-ghost btn-xs" onclick="moveTxnToNextDay('${t.id}')" title="Count this charge toward tomorrow">→ next day</button>
-        </div>
-      </div>`;
-    }).join('');
-    const dayTotal=s.todayTxns.reduce((s,t)=>s+n(t.amount),0);
-    txnList=`<div>${rows}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;">
-        <span style="font-size:12px;font-weight:700;">Total: ${$f(dayTotal,2)}</span>
-        <button class="btn btn-blue btn-sm" onclick="openChargeModalForDate('${s.dateStr}')">💳 Add Charge</button>
-      </div>`;
+
+    let detail='';
+    if(isExp){
+      const fixedList=todaysFixed.length?`<div class="daily-fixed-list">
+        <div class="daily-sub-label">Fixed bills charging today</div>
+        ${todaysFixed.map(c=>`<div class="daily-item-row"><span>${icon(c.icon)}</span><div class="daily-item-label">${c.label}</div><div class="daily-item-amt">${$f(n(moVal(c,month)),2)}</div></div>`).join('')}
+      </div>`:'';
+      let txnList='';
+      if(!s.todayTxns.length){
+        txnList=`<div class="daily-empty">No logged charges on this day.<br>
+          <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge for ${dLabel}</button>
+        </div>`;
+      }else{
+        const rows=s.todayTxns.map(t=>{
+          const cat=catMap[t.catId]||{icon:'folder',label:t.catId};
+          const card=cardMap[t.cardId];
+          const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
+          return`<div class="daily-item-row">
+            <span>${icon(cat.icon)}</span>
+            <div class="daily-item-label">${cat.label}${meta?`<div class="daily-item-meta">${meta}</div>`:''}</div>
+            <div class="daily-item-amt">${$f(n(t.amount),2)}
+              <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();moveTxnToNextDay('${t.id}')" title="Count toward tomorrow">${icon('chevron',10)}</button>
+            </div>
+          </div>`;
+        }).join('');
+        txnList=`<div>${rows}</div>
+          <div style="display:flex;justify-content:flex-end;padding-top:8px;">
+            <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge</button>
+          </div>`;
+      }
+      detail=`<div class="day-detail">${fixedList}${txnList}</div>`;
+    }
+    dayRows.push(summary+detail);
   }
 
-  return nav+boxes+bar+mStrip+fixedList+txnList;
+  return nav+mStrip+`<div class="daily-list">${dayRows.join('')}</div>`;
 }
 
 function dailyNav(dir){
-  const d=new Date(dailyViewDate+'T00:00:00');
-  d.setDate(d.getDate()+dir);
-  dailyViewDate=d.toISOString().split('T')[0];
+  dailyViewMonthIdx+=dir;
+  if(dailyViewMonthIdx<0){dailyViewMonthIdx=11;dailyViewYear--;}
+  if(dailyViewMonthIdx>11){dailyViewMonthIdx=0;dailyViewYear++;}
+  render();
+}
+function toggleDailyDay(dateStr){
+  dailyExpandedDate=dailyExpandedDate===dateStr?null:dateStr;
   render();
 }
 function openChargeModalForDate(dateStr){
@@ -730,21 +794,22 @@ function moveTxnToNextDay(txnId){
 function sectSnapshot(t){
   const box=(l,v,c,s)=>`<div class="snap-box"><div class="snap-label">${l}</div><div class="snap-val ${c}">${v}</div><div class="snap-sub">${s}</div></div>`;
   const spendPerDay=t.total/30,dayOk=spendPerDay<=D.settings.dailyBudget;
-  return`<div class="snap-grid">${box('Monthly Income',$f(D.settings.income),'c-blue','net take-home')}${box('Fixed Commitments',$f(t.fixedTotal),t.fixedTotal>D.settings.income?'c-red':'c-yellow','+ variable: '+$f(t.total)+' total')}${box('Left Over',$f(t.left),clr(t.left),t.left>=0?'surplus ✓':'deficit ⚠')}${box('Spend / Day',$f(spendPerDay)+'/d',dayOk?'c-green':'c-red','budget: $'+D.settings.dailyBudget+'/d')}</div>`;
+  return`<div class="snap-grid">${box('Monthly Income',$f(D.settings.income),'c-blue','net take-home')}${box('Fixed Commitments',$f(t.fixedTotal),'c-yellow','+ variable: '+$f(t.total)+' total')}${box('Left Over',$f(t.left),clr(t.left),t.left>=0?'surplus':'deficit')}${box('Spend / Day',$f(spendPerDay)+'/d',dayOk?'c-green':'c-yellow','budget: $'+D.settings.dailyBudget+'/d')}</div>`;
 }
 
 // ── BUDGET ───────────────────────────────────────────
 function sectBudget(t){
-  // For Needs/Wants: under target = green. For Savings: under target = red (inverted).
-  const gc2=(a,ta,inv)=>inv?(a>=ta?'c-green':a>=ta*.5?'c-yellow':'c-red'):(a<=ta*.9?'c-green':a<=ta?'c-yellow':'c-red');
-  const gb2=(a,ta,inv)=>inv?(a>=ta?'#1a7f37':a>=ta*.5?'#b45309':'#cf222e'):(a<=ta*.9?'#1a7f37':a<=ta?'#b45309':'#cf222e');
+  // For Needs/Wants: under target = green, over = yellow (still a positive $, never red).
+  // For Savings: under target = yellow (inverted), red never used — these are all positive figures.
+  const gc2=(a,ta,inv)=>inv?(a>=ta?'c-green':'c-yellow'):(a<=ta?'c-green':'c-yellow');
+  const gb2=(a,ta,inv)=>inv?(a>=ta?'#1a7f37':'#b45309'):(a<=ta?'#1a7f37':'#b45309');
   const rows=[
-    {l:'🏠 Needs',  a:t.N,ta:t.Nt,pA:t.Np,pT:D.settings.goals.needs, inv:false},
-    {l:'✨ Wants',  a:t.W,ta:t.Wt,pA:t.Wp,pT:D.settings.goals.wants,  inv:false},
-    {l:'💰 Savings',a:t.S,ta:t.St,pA:t.Sp,pT:D.settings.goals.savings,inv:true},
+    {l:'Needs',  a:t.N,ta:t.Nt,pA:t.Np,pT:D.settings.goals.needs, inv:false},
+    {l:'Wants',  a:t.W,ta:t.Wt,pA:t.Wp,pT:D.settings.goals.wants,  inv:false},
+    {l:'Savings',a:t.S,ta:t.St,pA:t.Sp,pT:D.settings.goals.savings,inv:true},
   ];
   return`<div class="budget-layout"><div>${rows.map(r=>{
-    const diff=r.a-r.ta,over=diff>0,goodLabel=r.inv?(over?'above target ✓':'below target ⚠'):(over?'over budget ⚠':'under budget ✓');
+    const diff=r.a-r.ta,over=diff>0,goodLabel=r.inv?(over?'above target':'below target'):(over?'over budget':'under budget');
     return`<div class="gauge"><div class="gauge-lbl">${r.l}</div><div class="gauge-track"><div class="gauge-fill" style="width:${Math.min(r.pA,100)}%;background:${gb2(r.a,r.ta,r.inv)};"></div><div class="gauge-tgt" style="left:${Math.min(r.pT,99)}%;"></div></div>
     <div class="gauge-nums"><div class="${gc2(r.a,r.ta,r.inv)}" style="font-weight:700;">${pf(r.pA)} <span class="c-muted" style="font-size:10px;">/ ${r.pT}%</span></div><div class="${gc2(r.a,r.ta,r.inv)}" style="font-size:10px;">${$f(Math.abs(diff))} ${goodLabel}</div></div></div>`;
   }).join('')}<div style="font-size:10px;color:var(--muted);margin-top:3px;">Vertical mark = your target. Green = on track.</div></div>
@@ -789,11 +854,13 @@ function sectCreditCards(){
     const asOf=entry&&entry.date!==todayStr()?`<span style="font-weight:400;font-size:10px;color:var(--muted);"> as of ${entry.date}</span>`:'';
     const dueStr=dueDay?`Due ${ordinal(dueDay)} — ${days!==null?`<strong class="${urgent?'c-red':soon?'c-yellow':'c-green'}">${days}d</strong>`:'?'}${dueAmt?` — $${$f(n(dueAmt))} due`:''}`:'<span class="c-muted">No due date set</span>';
     const notesStr=entry?.notes?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic;">${entry.notes}</div>`:'';
+    const aprStr=card.apr?`<div style="font-size:10px;color:var(--muted);margin-top:2px;">APR <span class="ev" onclick="editCardApr('${card.id}')">${card.apr}%</span></div>`:`<div style="font-size:10px;margin-top:2px;"><span class="ev c-muted" onclick="editCardApr('${card.id}')">+ add APR</span></div>`;
     return`<div class="cc-card ${urgent?'urgent':soon?'soon':''}">
-      <div class="cc-name">${card.emoji} ${card.name}</div>
+      <div class="cc-name">${icon(card.icon)} ${card.name}</div>
       <div class="cc-bal ${bal!==null?'c-red':'c-muted'}">${bal!==null?$f(bal,2):'—'}${asOf}</div>
       <div class="cc-meta">${entry?'Updated today':'Not updated yet'}</div>
       <div class="cc-due">${dueStr}</div>
+      ${aprStr}
       ${notesStr}
       <div class="cc-actions">
         <button class="btn btn-blue btn-sm" onclick="openCCModal('${card.id}')">Update</button>
@@ -801,9 +868,22 @@ function sectCreditCards(){
       </div>
     </div>`;
   }).join('');
-  return`<div class="hint">📋 Personal reference only — these balances <strong>do not</strong> affect your budget, leftover, or Spend/Day. Enter a balance whenever you check your accounts; the last entry carries forward if you skip a day.</div>
+  const totalBal=ccs.reduce((s,card)=>{const e=getLatestCardEntry(card.id);return s+(e?n(e.balance):0);},0);
+  return`<div class="hint">Personal reference only — these balances <strong>do not</strong> affect your budget, leftover, or Spend/Day. Enter a balance whenever you check your accounts; the last entry carries forward if you skip a day.</div>
   <div class="cc-grid">${cards}</div>
-  <div style="font-size:10px;color:var(--muted);margin-top:8px;">Red = due within 3 days · Yellow = within 7 days · Tap "Update" to log today's balance or set a due date.</div>`;
+  <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;margin-top:10px;">
+    <div style="font-weight:700;font-size:12px;">Total Balance</div>
+    <div style="font-size:16px;font-weight:800;" class="${totalBal>0?'c-red':'c-muted'}">${$f(totalBal,2)}</div>
+  </div>
+  <div style="font-size:10px;color:var(--muted);margin-top:8px;">Red = due within 3 days · Yellow = within 7 days · Tap "Update" to log today's balance or set a due date. Tap the APR line to set an interest rate.</div>`;
+}
+function editCardApr(cardId){
+  const card=(D.cards||[]).find(c=>c.id===cardId);
+  if(!card)return;
+  const v=prompt('Interest rate (APR %) for '+card.name,card.apr||'');
+  if(v===null)return;
+  card.apr=v.trim()===''?null:Math.max(0,n(v));
+  saveData();render();
 }
 
 // ── TRANSACTIONS ─────────────────────────────────────
@@ -813,8 +893,8 @@ function sectTransactions(){
   const visible=allTxns.filter(t=>active.includes(dateToMi(t.date)));
   const catMap={};D.categories.forEach(c=>{catMap[c.id]=c;});
   const cardMap={};(D.cards||[]).forEach(c=>{cardMap[c.id]=c;});
-  const addBtn=`<button class="btn btn-blue btn-sm" onclick="openChargeModal()" style="margin-bottom:10px;">💳 Add Charge</button>`;
-  if(!visible.length)return`${addBtn}<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No charges in the selected period.<br>Tap <strong>💳</strong> (bottom-left) or the button above.</div>`;
+  const addBtn=`<button class="btn btn-blue btn-sm" onclick="openChargeModal()" style="margin-bottom:10px;">${icon('creditcard')} Add Charge</button>`;
+  if(!visible.length)return`${addBtn}<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No charges in the selected period.<br>Tap the button above to add one.</div>`;
   const byMonth={};
   visible.forEach(t=>{const mi=dateToMi(t.date);if(!byMonth[mi])byMonth[mi]=[];byMonth[mi].push(t);});
   let rows='',grandTotal=0;
@@ -823,65 +903,72 @@ function sectTransactions(){
     const mTotal=mTxns.reduce((s,t)=>s+n(t.amount),0);
     grandTotal+=mTotal;
     rows+=`<tr class="txn-month-head"><td colspan="7">${ALL_MONTHS[mi]} 2026${!H1.includes(Number(mi))?'*':''}<span style="float:right;">${$f(mTotal,2)}</span></td></tr>`;
-    mTxns.forEach(t=>{
-      const cat=catMap[t.catId]||{emoji:'?',label:t.catId,type:'W'};
-      const card=cardMap[t.cardId];
-      const hasItems=t.items&&t.items.length>0;
-      const isExp=expandedTxns.has(t.id);
-      rows+=`<tr>
-        <td class="hide-sm" style="color:var(--muted);font-size:10px;white-space:nowrap;">${t.date}</td>
-        <td>${cat.emoji} <span style="font-size:12px;">${cat.label}</span></td>
-        <td class="hide-sm"><span class="pill pill-${cat.type}">${cat.type}</span></td>
-        <td class="hide-sm">${card?`<span style="font-size:11px;">${card.emoji} ${card.name}</span>`:'<span class="c-muted">—</span>'}</td>
-        <td>${t.justification?`<span class="j-badge ${jClass(t.justification)}">${t.justification}</span>`:'<span class="c-muted" style="font-size:10px;">—</span>'}</td>
-        <td style="font-weight:600;white-space:nowrap;">${$f(n(t.amount),2)}</td>
-        <td style="white-space:nowrap;">
-          ${t.desc?`<span class="hide-sm" style="color:var(--muted);font-size:11px;margin-right:4px;">${t.desc}</span>`:''}
-          ${hasItems?`<button class="btn-expand" onclick="toggleTxn('${t.id}')">${isExp?'▲':'▼'}</button>`:''}
-          <button class="del-btn" onclick="openChargeModal('${t.id}')" title="Edit">✎</button>
-          <button class="del-btn" onclick="deleteTxn('${t.id}')" title="Delete">×</button>
-        </td>
-      </tr>`;
-      if(hasItems&&isExp){
-        rows+=`<tr class="txn-items-row"><td colspan="7"><div class="txn-items-inner">
-          <span style="font-size:10px;color:var(--muted);font-weight:600;width:100%;margin-bottom:2px;">Receipt items:</span>
-          ${t.items.map(it=>`<div class="item-chip"><span>${it.name}</span><span class="chip-amt">${$f(n(it.amount),2)}</span></div>`).join('')}
-        </div></td></tr>`;
-      }
+    const byDay={};
+    mTxns.forEach(t=>{if(!byDay[t.date])byDay[t.date]=[];byDay[t.date].push(t);});
+    Object.keys(byDay).sort((a,b)=>new Date(b)-new Date(a)).forEach(dateStr=>{
+      const dTxns=byDay[dateStr],dTotal=dTxns.reduce((s,t)=>s+n(t.amount),0);
+      const dLabel=new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      rows+=`<tr class="txn-day-head"><td colspan="7">${dLabel}<span style="float:right;">${$f(dTotal,2)}</span></td></tr>`;
+      dTxns.forEach(t=>{
+        const cat=catMap[t.catId]||{icon:'folder',label:t.catId,type:'W'};
+        const card=cardMap[t.cardId];
+        const hasItems=t.items&&t.items.length>0;
+        const isExp=expandedTxns.has(t.id);
+        rows+=`<tr>
+          <td class="hide-sm" style="color:var(--muted);font-size:10px;white-space:nowrap;">${t.date}</td>
+          <td>${icon(cat.icon)} <span style="font-size:12px;">${cat.label}</span></td>
+          <td class="hide-sm"><span class="pill pill-${cat.type}">${cat.type}</span></td>
+          <td class="hide-sm">${card?`<span style="font-size:11px;">${icon(card.icon)} ${card.name}</span>`:'<span class="c-muted">—</span>'}</td>
+          <td>${t.justification?`<span class="j-badge ${jClass(t.justification)}">${t.justification}</span>`:'<span class="c-muted" style="font-size:10px;">—</span>'}</td>
+          <td style="font-weight:600;white-space:nowrap;">${$f(n(t.amount),2)}</td>
+          <td style="white-space:nowrap;">
+            ${t.desc?`<span class="hide-sm" style="color:var(--muted);font-size:11px;margin-right:4px;">${t.desc}</span>`:''}
+            ${hasItems?`<button class="btn-expand" onclick="toggleTxn('${t.id}')">${icon(isExp?'chevronup':'chevron')}</button>`:''}
+            <button class="del-btn" onclick="openChargeModal('${t.id}')" title="Edit">${icon('pencil')}</button>
+            <button class="del-btn" onclick="deleteTxn('${t.id}')" title="Delete">${icon('trash')}</button>
+          </td>
+        </tr>`;
+        if(hasItems&&isExp){
+          rows+=`<tr class="txn-items-row"><td colspan="7"><div class="txn-items-inner">
+            <span style="font-size:10px;color:var(--muted);font-weight:600;width:100%;margin-bottom:2px;">Receipt items:</span>
+            ${t.items.map(it=>`<div class="item-chip"><span>${it.name}</span><span class="chip-amt">${$f(n(it.amount),2)}</span></div>`).join('')}
+          </div></td></tr>`;
+        }
+      });
     });
   });
   rows+=`<tr class="txn-total-row"><td colspan="5">Total (selected period)</td><td colspan="2">${$f(grandTotal,2)}</td></tr>`;
   return`${addBtn}<div style="overflow-x:auto;"><table class="txn-table">
     <thead><tr><th class="hide-sm">Date</th><th>Category</th><th class="hide-sm">Type</th><th class="hide-sm">Card</th><th>Why</th><th>Amount</th><th>Details</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-  <div style="font-size:10px;color:var(--muted);margin-top:6px;">▼ expand a row to see receipt items.</div>`;
+  <div style="font-size:10px;color:var(--muted);margin-top:6px;">Expand a row to see receipt items.</div>`;
 }
 
 // ── SETTINGS ─────────────────────────────────────────
 function sectSettings(){
   const g=D.settings.goals,total=g.needs+g.wants+g.savings;
   const ok=total===100,over=total>100;
-  return`<div class="hint">⚡ Set Needs % and Wants % — Savings fills the remainder automatically. Must total 100%.</div>
+  return`<div class="hint">Set Needs % and Wants % — Savings fills the remainder automatically. Must total 100%.</div>
   <div class="settings-grid">
     <div class="set-item"><label class="set-label">Monthly Income ($)</label><input class="set-input" type="number" value="${D.settings.income}" onblur="setSetting('income',this.value)" onchange="setSetting('income',this.value)"/></div>
     <div class="set-item"><label class="set-label">Daily Budget ($)</label><input class="set-input" type="number" value="${D.settings.dailyBudget}" onblur="setSetting('dailyBudget',this.value)" onchange="setSetting('dailyBudget',this.value)"/></div>
-    <div class="set-item"><label class="set-label">🏠 Needs Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.needs}" onblur="setGoal('needs',this.value)" onchange="setGoal('needs',this.value)"/></div>
-    <div class="set-item"><label class="set-label">✨ Wants Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.wants}" onblur="setGoal('wants',this.value)" onchange="setGoal('wants',this.value)"/></div>
-    <div class="set-item"><label class="set-label">💰 Savings (auto) %</label>
+    <div class="set-item"><label class="set-label">Needs Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.needs}" onblur="setGoal('needs',this.value)" onchange="setGoal('needs',this.value)"/></div>
+    <div class="set-item"><label class="set-label">Wants Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.wants}" onblur="setGoal('wants',this.value)" onchange="setGoal('wants',this.value)"/></div>
+    <div class="set-item"><label class="set-label">Savings (auto) %</label>
       <div class="set-input" style="background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:800;padding:6px 10px;border-radius:6px;border:1px solid;">${g.savings}%</div>
     </div>
   </div>
   ${!ok?`<div class="hint hint-yellow" style="margin-top:8px;">Total: ${total}% ${over?'(over — reduce Needs or Wants)':'(under — will auto-fix on next change)'}</div>`:''}
   <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-    <button class="btn btn-blue btn-sm" onclick="openMonthModal()">📅 Add Month</button>
-    <button class="btn btn-red btn-sm" onclick="openRemoveMonthModal()">🗑️ Remove a Month</button>
-    <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 Reset all defaults</button>
+    <button class="btn btn-blue btn-sm" onclick="openMonthModal()">${icon('plus')} Add Month</button>
+    <button class="btn btn-red btn-sm" onclick="openRemoveMonthModal()">${icon('trash')} Remove a Month</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetAll()">${icon('refresh')} Reset all defaults</button>
   </div>
   <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-    <div class="hint" style="margin-bottom:8px;">💾 Your data lives only in this browser. Download a backup regularly, and keep it somewhere safe (e.g. Google Drive, Desktop).</div>
+    <div class="hint" style="margin-bottom:8px;">Your data lives only in this browser. Download a backup regularly, and keep it somewhere safe (e.g. Google Drive, Desktop).</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-green btn-sm" onclick="exportBackup()">⬇️ Download Backup</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">⬆️ Restore from Backup</button>
+      <button class="btn btn-green btn-sm" onclick="exportBackup()">${icon('download')} Download Backup</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">${icon('upload')} Restore from Backup</button>
       <input type="file" id="import-file" accept="application/json" style="display:none;" onchange="importBackup(this.files[0])"/>
       ${D.lastBackupAt?`<span style="font-size:11px;color:var(--muted);">Last downloaded: ${new Date(D.lastBackupAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>`:''}
     </div>
@@ -923,37 +1010,41 @@ function importBackup(file){
 // ── CATEGORIES ───────────────────────────────────────
 function sectCategories(t){
   const es=editState,tracked=D.months||H1,active=D.filter?.activeMonths||tracked;
+  const singleMonth=active.length===1?active[0]:null;
+  const amtLabel=singleMonth!==null?ALL_MONTHS[singleMonth]:'Avg/Mo';
   const rows=t.cats.map((c,i)=>{
     const isExp=expandedCats.has(i);
-    const eEmoji=es&&es.type==='cat'&&es.idx===i&&es.field==='emoji';
+    const eIcon=es&&es.type==='cat'&&es.idx===i&&es.field==='icon';
     const eLabel=es&&es.type==='cat'&&es.idx===i&&es.field==='label';
     const eAmt=es&&es.type==='cat'&&es.idx===i&&es.field==='monthly';
+    const displayAmt=singleMonth!==null?moVal(c,singleMonth):c.eff;
     const main=`<tr>
-      <td>${eEmoji?`<input class="edit-input emoji" id="ei" value="${c.emoji}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'emoji')">${c.emoji}</span>`}
+      <td>${eIcon?`<select id="ei" onblur="commitEdit()" onchange="commitEdit()">${Object.keys(ICONS).map(k=>`<option value="${k}" ${c.icon===k?'selected':''}>${k}</option>`).join('')}</select>`:`<span class="ev" onclick="startEdit('cat',${i},'icon')" title="Change icon">${icon(c.icon)}</span>`}
       &nbsp;${eLabel?`<input class="edit-input wide" id="ei" value="${c.label}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'label')">${c.label}</span>`}</td>
       <td class="hide-sm"><select class="type-sel" onchange="setCatType(${i},this.value)"><option value="N" ${c.type==='N'?'selected':''}>N</option><option value="W" ${c.type==='W'?'selected':''}>W</option><option value="S" ${c.type==='S'?'selected':''}>S</option></select></td>
-      <td>${eAmt?`<input class="edit-input" id="ei" type="number" step="0.01" value="${c.eff.toFixed(2)}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'monthly')">${$f(c.eff)}</span>`}</td>
-      <td class="c-muted hide-sm" style="font-size:11px;">${pf(p(c.eff,D.settings.income))}</td>
+      <td>${eAmt?`<input class="edit-input" id="ei" type="number" step="0.01" value="${displayAmt.toFixed(2)}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'monthly')">${$f(displayAmt)}</span>`}</td>
+      <td class="c-muted hide-sm" style="font-size:11px;">${pf(p(displayAmt,D.settings.income))}</td>
       <td class="hide-sm">
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;"><input type="checkbox" ${c.fixed?'checked':''} onchange="setCatFixed(${i},this.checked)"> Fixed</label>
         ${c.fixed&&c.id!=='rent'?`<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);margin-top:2px;">Day <input type="number" min="1" max="31" value="${c.chargeDay||1}" style="width:34px;padding:1px 3px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);" onchange="setCatChargeDay(${i},this.value)"/></label>`:''}
       </td>
-      <td><button class="btn-expand" onclick="toggleExpand(${i})">${isExp?'▲':'▼'}</button><button class="btn btn-red btn-sm" onclick="delCat(${i})">×</button></td>
+      <td><button class="btn-expand" onclick="toggleExpand(${i})">${icon(isExp?'chevronup':'chevron')}</button><button class="btn btn-red btn-sm" onclick="delCat(${i})">×</button></td>
     </tr>`;
     const moRow=isExp?`<tr class="expand-row"><td colspan="6"><div class="months-edit">
       <div style="font-size:11px;color:var(--muted);font-weight:600;width:100%;margin-bottom:4px;">Per-month breakdown</div>
       ${tracked.map(mi=>{const fut=!H1.includes(mi),isAct=active.includes(mi),hasTxn=(D.transactions||[]).some(t=>t.catId===c.id&&dateToMi(t.date)===mi),val=moVal(c,mi);
         return`<div class="mo-field"><label class="mo-label">${ALL_MONTHS[mi]}${fut?'*':''}</label>
-        <div class="mo-value ${hasTxn?'from-txn':''} ${!hasTxn&&isAct&&!fut?'active-mo':''} ${fut&&isAct?'future-mo':''}" title="${hasTxn?'From charges':'Manual'}">${hasTxn?'💳 ':''}${$f(val)}</div></div>`;}).join('')}
+        <div class="mo-value ${hasTxn?'from-txn':''} ${!hasTxn&&isAct&&!fut?'active-mo':''} ${fut&&isAct?'future-mo':''}" title="${hasTxn?'From charges':'Manual'}">${$f(val)}</div></div>`;}).join('')}
     </div></td></tr>`:'';
     return main+moRow;
   }).join('');
-  return`<div class="hint">⚡ Click any amount to edit. Changes sync across all sections immediately.</div>
+  const totalAmt=singleMonth!==null?t.cats.reduce((s,c)=>s+moVal(c,singleMonth),0):t.total;
+  return`<div class="hint">Click any amount to edit. Changes sync across all sections immediately.</div>
   <div style="overflow-x:auto;"><table class="cat-table">
-    <thead><tr><th>Category</th><th class="hide-sm">Type</th><th>Avg/Mo</th><th class="hide-sm">%</th><th class="hide-sm">Fixed</th><th></th></tr></thead>
-    <tbody>${rows}<tr class="total-row"><td colspan="2">TOTAL</td><td>${$f(t.total)}</td><td class="c-muted hide-sm" style="font-size:11px;">${pf(p(t.total,D.settings.income))}</td><td colspan="2"></td></tr></tbody>
+    <thead><tr><th>Category</th><th class="hide-sm">Type</th><th>${amtLabel}</th><th class="hide-sm">%</th><th class="hide-sm">Fixed</th><th></th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td colspan="2">TOTAL</td><td>${$f(totalAmt)}</td><td class="c-muted hide-sm" style="font-size:11px;">${pf(p(totalAmt,D.settings.income))}</td><td colspan="2"></td></tr></tbody>
   </table></div>
-  <div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="openCatModal()">＋ Add Category</button></div>`;
+  <div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="openCatModal()">${icon('plus')} Add Category</button></div>`;
 }
 
 // ── LEAKS ────────────────────────────────────────────
@@ -962,7 +1053,7 @@ function sectLeaks(t){
   if(!wants.length)return`<div class="c-muted">No Want categories.</div>`;
   const mx=wants[0].eff||1;
   return`<div style="margin-bottom:10px;font-size:12px;">Wants: <strong class="${gclr(t.W,t.Wt)}">${$f(t.W)}/mo</strong> vs target <strong>${$f(t.Wt)}/mo</strong></div>
-  ${wants.map(c=>`<div class="leak"><div class="leak-lbl"><span>${c.emoji} ${c.label}</span><span class="${c.eff>200?'c-red':'c-green'}" style="font-weight:600;">${$f(c.eff)}/mo</span></div><div class="leak-track"><div class="leak-fill" style="width:${p(c.eff,mx)}%;background:${c.eff>200?'#cf222e':'#1a7f37'};"></div></div></div>`).join('')}`;
+  ${wants.map(c=>`<div class="leak"><div class="leak-lbl"><span>${icon(c.icon)} ${c.label}</span><span class="${c.eff>200?'c-red':'c-green'}" style="font-weight:600;">${$f(c.eff)}/mo</span></div><div class="leak-track"><div class="leak-fill" style="width:${p(c.eff,mx)}%;background:${c.eff>200?'#cf222e':'#1a7f37'};"></div></div></div>`).join('')}`;
 }
 
 // ── FIXED ────────────────────────────────────────────
@@ -970,8 +1061,8 @@ function sectFixed(t){
   const fixed=t.cats.filter(c=>c.fixed);
   if(!fixed.length)return`<div class="c-muted">No fixed commitments.</div>`;
   const tot=fixed.reduce((s,c)=>s+c.eff,0);
-  return fixed.map(c=>`<div class="acc-row"><div><div class="acc-name">${c.emoji} ${c.label}</div><div class="acc-role"><span class="pill pill-${c.type}">${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'}</span></div></div><div class="acc-bal">${$f(c.eff)}/mo</div></div>`).join('')+
-  `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px;margin-top:8px;display:flex;justify-content:space-between;"><div style="font-weight:700;">Total Fixed</div><div class="${p(tot,D.settings.income)>70?'c-red':'c-yellow'}" style="font-size:17px;font-weight:800;">${$f(tot)}/mo</div></div>`;
+  return fixed.map(c=>`<div class="acc-row"><div><div class="acc-name">${icon(c.icon)} ${c.label}</div><div class="acc-role"><span class="pill pill-${c.type}">${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'}</span></div></div><div class="acc-bal">${$f(c.eff)}/mo</div></div>`).join('')+
+  `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px;margin-top:8px;display:flex;justify-content:space-between;"><div style="font-weight:700;">Total Fixed</div><div class="${p(tot,D.settings.income)>70?'c-yellow':'c-green'}" style="font-size:17px;font-weight:800;">${$f(tot)}/mo</div></div>`;
 }
 
 // ── ACCOUNTS ─────────────────────────────────────────
@@ -979,7 +1070,7 @@ function sectAccounts(){
   const es=editState;
   return D.accounts.map((a,i)=>{
     const editing=es&&es.type==='acc'&&es.idx===i,has=a.balance!=null&&a.balance!==0;
-    return`<div class="acc-row"><div><div class="acc-name">${a.emoji} ${a.label}</div><div class="acc-role">${a.role}</div></div>
+    return`<div class="acc-row"><div><div class="acc-name">${icon(a.icon)} ${a.label}</div><div class="acc-role">${a.role}</div></div>
     <div>${editing?`<input class="edit-input" id="ei" type="number" value="${a.balance||0}" style="width:110px;" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<div class="acc-bal ${has?clr(a.balance):'c-muted'}" onclick="startEdit('acc',${i})" style="cursor:pointer;${has?'':'font-size:12px;'}">${has?$f(a.balance):'tap to set'}</div>`}</div></div>`;
   }).join('')+`<div style="font-size:10px;color:var(--muted);margin-top:7px;">Tap any balance to update.</div>`;
 }
@@ -994,8 +1085,8 @@ function selectNone(){D.filter={activeMonths:[]};saveData();render();}
 function openMonthModal(){
   const tracked=D.months||H1;
   document.getElementById('mo-pick-grid').innerHTML=ALL_MONTHS.map((m,mi)=>{const ex=tracked.includes(mi);return`<div class="mo-pick ${ex?'exists':''}" onclick="${ex?'':'addMonth('+mi+')'}">${m} 2026${ex?'<br><span style="font-size:9px">added</span>':''}</div>`;}).join('');
-  document.querySelector('#month-modal .modal-title').textContent='📅 Add a Month';
-  document.querySelector('#month-modal p').textContent='New months start at $0. Add charges via 💳 button.';
+  document.querySelector('#month-modal .modal-title').textContent='Add a Month';
+  document.querySelector('#month-modal p').textContent='New months start at $0. Add charges via the charge button.';
   document.getElementById('month-modal').style.display='flex';
 }
 function closeMonthModal(){document.getElementById('month-modal').style.display='none';}
@@ -1057,10 +1148,10 @@ function openChargeModal(txnId){
   document.getElementById('items-toggle-lbl').textContent='Add receipt items (optional)';
   // Cards dropdown
   const cardSel=document.getElementById('c-card');
-  cardSel.innerHTML=`<option value="">— cash / no card —</option>`+(D.cards||[]).map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  cardSel.innerHTML=`<option value="">— cash / no card —</option>`+(D.cards||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   if(editing)cardSel.value=editing.cardId||'';
   // Categories dropdown
-  document.getElementById('c-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${c.emoji} ${c.label} (${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'})</option>`).join('');
+  document.getElementById('c-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${c.label} (${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'})</option>`).join('');
   if(editing)document.getElementById('c-cat').value=editing.catId;
   // Justification picker
   renderJPicker();
@@ -1077,7 +1168,7 @@ function openChargeModal(txnId){
     });
     syncItemTotal();
   }
-  document.getElementById('charge-modal-title').textContent=editing?'✎ Edit Charge':'💳 Add Charge';
+  document.getElementById('charge-modal-title').textContent=editing?'Edit Charge':'Add Charge';
   document.getElementById('charge-modal-submit').textContent=editing?'Save Changes':'Add Charge';
   document.getElementById('charge-modal').style.display='flex';
   setTimeout(()=>document.getElementById('c-amount').focus(),50);
@@ -1179,7 +1270,7 @@ function openRemoveMonthModal(){
   document.getElementById('mo-pick-grid').innerHTML=tracked.map(mi=>
     `<div class="mo-pick" onclick="removeMonth(${mi})">${ALL_MONTHS[mi]} 2026</div>`
   ).join('');
-  document.querySelector('#month-modal .modal-title').textContent='🗑️ Remove a Month';
+  document.querySelector('#month-modal .modal-title').textContent='Remove a Month';
   document.querySelector('#month-modal p').textContent='Deletes that month\'s tracking, charges, and per-month category amounts. Cannot be undone.';
   document.getElementById('month-modal').style.display='flex';
 }
@@ -1216,7 +1307,8 @@ function edKD(e){if(e.key==='Enter'){e.preventDefault();commitEdit();}if(e.key==
 // ── ADD CATEGORY MODAL ────────────────────────────────
 function openCatModal(){
   document.getElementById('cat-modal').style.display='flex';
-  document.getElementById('m-label').value='';document.getElementById('m-emoji').value='✨';
+  document.getElementById('m-label').value='';
+  document.getElementById('m-icon').innerHTML=Object.keys(ICONS).map(k=>`<option value="${k}" ${k==='folder'?'selected':''}>${k}</option>`).join('');
   document.getElementById('m-monthly').value='';document.getElementById('m-type').value='W';
   document.getElementById('m-fixed').checked=false;
   setTimeout(()=>document.getElementById('m-label').focus(),50);
@@ -1228,7 +1320,7 @@ function submitCat(){
   const amt=n(document.getElementById('m-monthly').value);
   const mo={};(D.months||H1).forEach(mi=>{mo[mi]=H1.includes(mi)?amt:0;});
   const fixed=document.getElementById('m-fixed').checked;
-  D.categories.push({id:'cat_'+Date.now(),emoji:document.getElementById('m-emoji').value||'✨',label,type:document.getElementById('m-type').value,monthly:amt,mo,fixed,chargeDay:fixed?1:undefined});
+  D.categories.push({id:'cat_'+Date.now(),icon:document.getElementById('m-icon').value||'folder',label,type:document.getElementById('m-type').value,monthly:amt,mo,fixed,chargeDay:fixed?1:undefined});
   closeCatModal();saveData();render();
 }
 
@@ -1257,19 +1349,22 @@ async function sendChat(){
 }
 function buildCtx(t){
   const ccs=(D.cards||[]).filter(c=>c.cc).map(c=>{const e=getLatestCardEntry(c.id);return`${c.name}:${e?$f(e.balance):'?'}`;}).join(', ');
-  const top=[...t.cats].sort((a,b)=>b.eff-a.eff).slice(0,4).map(c=>`${c.emoji}${c.label}:${$f(c.eff)}`).join(',');
+  const top=[...t.cats].sort((a,b)=>b.eff-a.eff).slice(0,4).map(c=>`${c.label}:${$f(c.eff)}`).join(',');
   const jCounts={};(D.transactions||[]).forEach(t=>{const j=t.justification||'none';jCounts[j]=(jCounts[j]||0)+1;});
   return`Income:${$f(D.settings.income)}, Needs:${$f(t.N)}(${pf(t.Np)}), Wants:${$f(t.W)}(${pf(t.Wp)}), Savings:${$f(t.S)}(${pf(t.Sp)}), Surplus:${$f(t.left)}, Charges:${(D.transactions||[]).length}, CC Balances:${ccs}, Top:${top}, Justifications:${JSON.stringify(jCounts)}`;
 }
 function offlineReply(msg,t){
   const ml=msg.toLowerCase();
-  if(ml.includes('card')||ml.includes('credit'))return`Go to 💳 Credit Cards section and tap "Update" on any card to enter today's balance. Due dates and amounts are also editable there.`;
-  if(ml.includes('receipt')||ml.includes('item'))return`When adding a charge (💳 button), tap "Add receipt items" to enter individual line items. They sum to the total automatically.`;
+  if(ml.includes('card')||ml.includes('credit'))return`Go to Credit Cards section and tap "Update" on any card to enter today's balance. Due dates and amounts are also editable there.`;
+  if(ml.includes('receipt')||ml.includes('item'))return`When adding a charge, tap "Add receipt items" to enter individual line items. They sum to the total automatically.`;
   if(ml.includes('impulse')||ml.includes('justif'))return`Open the Transactions section to see why each charge was made. In the Add Charge modal, pick a justification like "Impulse buy" or add your own.`;
-  if(ml.includes('charge')||ml.includes('add'))return`Tap 💳 (bottom-left) to add a charge. Enter the date, amount, card used, category, justification, and optionally individual receipt items.`;
-  return`Surplus: ${$f(t.left)}/mo. Needs at ${pf(t.Np)} (target ${D.settings.goals.needs}%), Wants at ${pf(t.Wp)} (target ${D.settings.goals.wants}%). Add charges via the 💳 button.`;
+  if(ml.includes('charge')||ml.includes('add'))return`Tap the charge button (bottom-left) to add a charge. Enter the date, amount, card used, category, justification, and optionally individual receipt items.`;
+  return`Surplus: ${$f(t.left)}/mo. Needs at ${pf(t.Np)} (target ${D.settings.goals.needs}%), Wants at ${pf(t.Wp)} (target ${D.settings.goals.wants}%). Add charges via the charge button.`;
 }
 
+document.getElementById('fab-charge').innerHTML=icon('creditcard',20);
+document.getElementById('fab-cat').innerHTML=icon('plus',20);
+document.getElementById('fab-chat').innerHTML=icon('message',20);
 render();
 </script>
 </body>

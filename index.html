@@ -720,6 +720,9 @@ function moveTxnToNextDay(txnId){
   const d=new Date(txn.date+'T00:00:00');
   d.setDate(d.getDate()+1);
   txn.date=d.toISOString().split('T')[0];
+  const mi=dateToMi(txn.date);
+  if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);D.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.mo[mi]===undefined)c.mo[mi]=0;});}
+  if(!D.filter.activeMonths.includes(mi)){D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}
   saveData();render();
 }
 
@@ -1128,10 +1131,14 @@ function submitCharge(){
     const nm=r.querySelector('.iname').value.trim(),am=n(r.querySelector('.iamt').value);
     if(nm||am>0)items.push({name:nm||'Item',amount:am});
   });
-  // Auto-add month
+  // Auto-add month to tracking (if new) and to the active filter (if not already shown) —
+  // these are two separate lists (see ensureShape's growth logic), so a month can already
+  // be tracked without being visible; a charge you just logged must always be visible.
   const mi=dateToMi(date);
   if(!D.months)D.months=[...H1];
-  if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);if(!D.filter)D.filter={activeMonths:[...D.months]};else{D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}D.categories.forEach(c=>{if(!c.mo)c.mo={};c.mo[mi]=0;});}
+  if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);D.categories.forEach(c=>{if(!c.mo)c.mo={};c.mo[mi]=0;});}
+  if(!D.filter)D.filter={activeMonths:[...D.months]};
+  if(!D.filter.activeMonths.includes(mi)){D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}
   if(!D.transactions)D.transactions=[];
   if(editingTxnId){
     const t=D.transactions.find(x=>x.id===editingTxnId);

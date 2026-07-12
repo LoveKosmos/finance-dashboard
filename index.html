@@ -413,16 +413,14 @@ let dailyViewDate=todayStr();
 // unlimited times (only fills in missing fields, never overwrites user data,
 // never has a one-time-only branch that could silently stop applying).
 function loadData(){
+  let d;
   try{
     const s=localStorage.getItem(STORAGE_KEY);
-    if(s){
-      const d=JSON.parse(s);
-      ensureShape(d);
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(d));
-      return d;
-    }
-  }catch(e){console.warn('loadData error',e);}
-  return clone(DEFAULT);
+    d=s?JSON.parse(s):clone(DEFAULT);
+  }catch(e){console.warn('loadData error',e);d=clone(DEFAULT);}
+  ensureShape(d);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(d));
+  return d;
 }
 function ensureShape(d){
   // Structural guards — safe, never overwrite existing user data.

@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Finance Dashboard</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg:#f6f8fa;--surface:#fff;--surface2:#f3f4f6;--border:#d0d7de;
+  --text:#1f2328;--muted:#57606a;
+  --green:#1a7f37;--green-bg:#d1fae5;--green-border:#86efac;
+  --red:#cf222e;--red-bg:#fee2e2;--red-border:#fca5a5;
+  --yellow:#b45309;--yellow-bg:#fef3c7;--yellow-border:#fcd34d;
+  --blue:#0969da;--blue-bg:#eff6ff;--blue-border:#bae0fd;
+  --purple:#7c3aed;--purple-bg:#ede9fe;
+  --orange:#c2410c;--orange-bg:#fff7ed;--orange-border:#fed7aa;
+  --header-h:90px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;position:sticky;top:0;z-index:60;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.h-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.h-title{font-size:15px;font-weight:700;}
+.h-date{font-size:11px;color:var(--muted);}
+.h-stats{display:flex;gap:14px;flex-wrap:wrap;}
+.h-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;}
+.h-stat-val{font-size:13px;font-weight:700;}
+
+/* FILTER BAR */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 14px;position:sticky;top:var(--header-h);z-index:55;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.filter-label{font-size:10px;text-transform:uppercase;color:var(--muted);flex-shrink:0;}
+.month-btns{display:flex;gap:3px;flex-wrap:wrap;}
+.mbtn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;font-size:11px;font-weight:500;padding:3px 8px;cursor:pointer;color:var(--muted);}
+.mbtn:hover{border-color:var(--blue);color:var(--blue);}
+.mbtn.on{background:var(--blue-bg);border-color:var(--blue);color:var(--blue);font-weight:700;}
+.mbtn.future{border-style:dashed;}
+.mbtn.future.on{background:var(--yellow-bg);border-color:var(--yellow);color:var(--yellow);}
+.filter-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.filter-chip{background:var(--surface2);border:1px solid var(--border);border-radius:5px;font-size:11px;padding:3px 8px;cursor:pointer;color:var(--muted);}
+.filter-chip:hover{background:var(--bg);}
+.filter-chip.add-mo{border-color:var(--blue);color:var(--blue);background:var(--blue-bg);}
+.filter-period{margin-left:auto;font-size:10px;color:var(--muted);font-style:italic;flex-shrink:0;}
+
+/* MAIN */
+main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
+
+/* SECTION CARDS */
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.sc.dragging{opacity:.35;}
+.sc.over{border-color:var(--blue);border-style:dashed;}
+.sc-head{display:flex;align-items:center;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border);gap:7px;cursor:grab;user-select:none;}
+.sc-drag{color:var(--muted);font-size:14px;}
+.sc-title{font-size:12px;font-weight:600;flex:1;}
+.sc-acts{display:flex;gap:2px;}
+.sc.collapsed .sc-body{display:none;}
+.sc-body{padding:13px;}
+.icon-btn{background:none;border:1px solid transparent;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 5px;border-radius:4px;}
+.icon-btn:hover{border-color:var(--border);background:var(--bg);}
+
+/* CREDIT CARDS */
+.cc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.cc-card{border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface2);}
+.cc-card.urgent{border-color:var(--red);background:var(--red-bg);}
+.cc-card.soon{border-color:var(--yellow);background:var(--yellow-bg);}
+.cc-name{font-size:12px;font-weight:700;margin-bottom:6px;}
+.cc-bal{font-size:22px;font-weight:800;margin-bottom:2px;}
+.cc-meta{font-size:10px;color:var(--muted);margin-bottom:8px;}
+.cc-due{font-size:11px;font-weight:600;margin-bottom:8px;}
+.cc-actions{display:flex;gap:5px;flex-wrap:wrap;}
+
+/* SNAPSHOTS / BUDGET */
+.snap-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+@media(min-width:480px){.snap-grid{grid-template-columns:repeat(4,1fr);}}
+.snap-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px;}
+.snap-label{font-size:9px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.snap-val{font-size:21px;font-weight:800;line-height:1;}
+.snap-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.budget-layout{display:grid;gap:14px;}
+@media(min-width:520px){.budget-layout{grid-template-columns:1fr 175px;}}
+.chart-box{height:165px;position:relative;}
+.gauge{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.gauge-lbl{width:72px;font-size:11px;font-weight:600;flex-shrink:0;}
+.gauge-track{flex:1;height:17px;background:var(--surface2);border-radius:4px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.gauge-fill{height:100%;border-radius:3px;}
+.gauge-tgt{position:absolute;top:0;bottom:0;width:2px;background:rgba(0,0,0,.2);}
+.gauge-nums{width:112px;font-size:11px;text-align:right;flex-shrink:0;line-height:1.4;}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:9px;}
+.set-item{display:flex;flex-direction:column;gap:3px;}
+.set-label{font-size:10px;text-transform:uppercase;color:var(--muted);}
+.set-input{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:15px;font-weight:700;padding:6px 10px;width:100%;}
+.set-input:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px rgba(9,105,218,.1);}
+
+/* TRANSACTIONS TABLE */
+.txn-table{width:100%;border-collapse:collapse;font-size:12px;}
+.txn-table th{font-size:10px;text-transform:uppercase;color:var(--muted);padding:5px 7px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
+.txn-table td{padding:6px 7px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.txn-table tbody tr:hover>td{background:var(--surface2);}
+.txn-total-row td{background:var(--surface2);font-weight:700;border-top:2px solid var(--border);}
+.txn-month-head td{background:var(--surface2);font-size:11px;font-weight:700;color:var(--muted);padding:4px 7px;}
+.txn-items-row td{background:#fafbfc;padding:0;}
+.txn-items-inner{padding:8px 16px;display:flex;flex-wrap:wrap;gap:6px;}
+.item-chip{background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:11px;padding:2px 8px;display:flex;gap:5px;align-items:center;}
+.item-chip .chip-amt{font-weight:700;color:var(--blue);}
+
+/* CATEGORY TABLE */
+.cat-table{width:100%;border-collapse:collapse;font-size:13px;}
+.cat-table th{font-size:10px;text-transform:uppercase;color:var(--muted);padding:5px 7px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
+.cat-table td{padding:6px 7px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.cat-table tbody tr:hover td{background:var(--surface2);}
+.cat-table .total-row td{background:var(--surface2);font-weight:700;border-top:2px solid var(--border);}
+.expand-row td{padding:0;background:var(--surface2);}
+.months-edit{padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;}
+.mo-field{display:flex;flex-direction:column;gap:2px;}
+.mo-label{font-size:9px;text-transform:uppercase;color:var(--muted);}
+.mo-value{font-size:11px;font-weight:600;min-width:65px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);text-align:right;}
+.mo-value.from-txn{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.mo-value.active-mo{border-color:var(--blue);background:var(--blue-bg);}
+.mo-value.future-mo{border-color:var(--yellow);background:var(--yellow-bg);}
+
+/* INLINE EDIT */
+.ev{cursor:pointer;border-bottom:1px dashed transparent;transition:all .12s;display:inline-block;}
+.ev:hover{border-color:var(--blue);color:var(--blue);}
+.edit-input{background:var(--surface);border:1px solid var(--blue);border-radius:5px;color:var(--text);font-size:13px;padding:3px 7px;width:90px;outline:none;box-shadow:0 0 0 3px rgba(9,105,218,.12);}
+.edit-input.wide{width:148px;} .edit-input.emoji{width:54px;} .edit-input.narrow{width:65px;}
+.type-sel{background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;padding:2px 4px;cursor:pointer;}
+.type-sel:focus{outline:none;border-color:var(--blue);}
+
+/* PILLS & BADGES */
+.pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:12px;}
+.pill-N{background:var(--blue-bg);color:var(--blue);}
+.pill-W{background:var(--purple-bg);color:var(--purple);}
+.pill-S{background:var(--green-bg);color:var(--green);}
+.j-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:5px;border:1px solid;white-space:nowrap;}
+.j-impulse{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
+.j-planned{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.j-skip{background:var(--orange-bg);border-color:var(--orange-border);color:var(--orange);}
+.j-ranout{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue);}
+.j-sale{background:var(--purple-bg);border-color:var(--purple);color:var(--purple);}
+.j-other{background:var(--surface2);border-color:var(--border);color:var(--muted);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:3px;padding:5px 11px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;}
+.btn:hover{filter:brightness(.93);}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.btn-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.btn-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.btn-ghost{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.btn-purple{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple);}
+.btn-sm{padding:3px 8px;font-size:11px;}
+.btn-xs{padding:1px 6px;font-size:10px;}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:1px 5px;border-radius:3px;}
+.del-btn:hover{background:var(--red-bg);color:var(--red);}
+.btn-expand{background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:1px 4px;}
+.btn-expand:hover{color:var(--blue);}
+
+/* LEAKS/FIXED/ACCOUNTS */
+.leak{margin-bottom:10px;}
+.leak-lbl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
+.leak-track{background:var(--surface2);border:1px solid var(--border);border-radius:4px;height:7px;overflow:hidden;}
+.leak-fill{height:100%;border-radius:3px;}
+.acc-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.acc-row:last-child{border-bottom:none;}
+.acc-name{font-weight:600;font-size:13px;}
+.acc-role{font-size:11px;color:var(--muted);margin-top:1px;}
+.acc-bal{font-size:15px;font-weight:700;}
+
+/* HINTS */
+.hint{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:6px;padding:7px 11px;font-size:11px;color:var(--blue);margin-bottom:11px;}
+.hint-yellow{background:var(--yellow-bg);border-color:var(--yellow-border);color:var(--yellow);}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.modal-box{background:var(--surface);border-radius:12px;padding:20px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative;}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:14px;}
+.modal-field{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.modal-row{display:flex;gap:8px;}
+.modal-row .modal-field{flex:1;margin-bottom:0;}
+.modal-label{font-size:10px;text-transform:uppercase;color:var(--muted);}
+.modal-input,.modal-select{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;padding:7px 10px;width:100%;}
+.modal-input:focus,.modal-select:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px rgba(9,105,218,.1);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+.modal-sep{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.items-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.item-row{display:flex;gap:6px;align-items:center;}
+.item-row input{background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;padding:5px 8px;}
+.item-row .iname{flex:1;}
+.item-row .iamt{width:80px;}
+.item-total{font-size:11px;color:var(--muted);text-align:right;margin-top:4px;}
+.mo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:6px;}
+.mo-pick{padding:8px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;font-size:12px;font-weight:500;text-align:center;color:var(--muted);}
+.mo-pick:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg);}
+.mo-pick.exists{opacity:.4;cursor:default;pointer-events:none;text-decoration:line-through;}
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;color:var(--blue);margin:6px 0;}
+.j-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.j-option{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);font-size:11px;cursor:pointer;color:var(--muted);}
+.j-option:hover{border-color:var(--blue);color:var(--blue);}
+.j-option.selected{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;}
+
+/* FABs */
+.fab{position:fixed;width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:100;transition:transform .15s,box-shadow .15s;}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.22);}
+#fab-charge{bottom:20px;left:18px;background:var(--blue);color:#fff;}
+#fab-cat{bottom:20px;right:72px;background:var(--purple);color:#fff;font-size:22px;}
+#fab-chat{bottom:20px;right:18px;background:var(--green);color:#fff;}
+
+/* CHAT */
+#chat-panel{position:fixed;bottom:76px;right:16px;width:310px;max-height:420px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.16);z-index:101;display:flex;flex-direction:column;overflow:hidden;}
+.chat-head{background:var(--green);color:#fff;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.chat-head-title{font-size:13px;font-weight:600;}
+.chat-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.8);font-size:16px;}
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.chat-msg{max-width:85%;padding:7px 10px;border-radius:10px;font-size:12px;line-height:1.5;}
+.chat-msg.user{background:var(--blue);color:#fff;border-bottom-right-radius:3px;align-self:flex-end;}
+.chat-msg.assistant{background:var(--surface2);color:var(--text);border-bottom-left-radius:3px;align-self:flex-start;}
+.chat-input-row{padding:8px 10px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;}
+#chat-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text);font-size:12px;padding:6px 12px;outline:none;}
+.chat-send{background:var(--green);color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:600;}
+.chat-empty{text-align:center;color:var(--muted);font-size:11px;padding:20px 10px;line-height:1.7;}
+
+/* TOAST */
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--green);font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.on{opacity:1;}
+
+/* UTILS */
+.c-green{color:var(--green);}.c-red{color:var(--red);}.c-yellow{color:var(--yellow);}.c-blue{color:var(--blue);}.c-muted{color:var(--muted);}
+@media(max-width:430px){.hide-sm{display:none!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast">✓ Saved</div>
+
+<!-- Add Charge Modal -->
+<div class="modal-overlay" id="charge-modal" style="display:none;" onclick="if(event.target===this)closeChargeModal()">
+ <div class="modal-box">
+  <div class="modal-title" id="charge-modal-title">💳 Add Charge</div>
+  <div class="modal-row">
+   <div class="modal-field"><label class="modal-label">Date</label><input class="modal-input" id="c-date" type="date"/></div>
+   <div class="modal-field"><label class="modal-label">Total Amount ($)</label><input class="modal-input" id="c-amount" type="number" min="0" step="0.01" placeholder="0.00" oninput="syncItemTotal()"/></div>
+  </div>
+  <div class="modal-field"><label class="modal-label">Card / Account</label><select class="modal-select" id="c-card"></select></div>
+  <div class="modal-field"><label class="modal-label">Category</label><select class="modal-select" id="c-cat"></select></div>
+  <div class="modal-field"><label class="modal-label">Store / Description</label><input class="modal-input" id="c-desc" type="text" placeholder="e.g. Whole Foods, Equinox…"/></div>
+  <div class="modal-field">
+   <label class="modal-label">Justification</label>
+   <div class="j-list" id="j-picker"></div>
+   <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+    <input class="modal-input" id="j-new" placeholder="＋ New justification category…" style="font-size:12px;padding:5px 8px;"/>
+    <button class="btn btn-ghost btn-sm" onclick="addJustification()">Add</button>
+   </div>
+  </div>
+  <hr class="modal-sep"/>
+  <div class="toggle-row" onclick="toggleItems()">📋 <span id="items-toggle-lbl">Add receipt items (optional)</span></div>
+  <div id="items-section" style="display:none;">
+   <div class="items-list" id="items-list"></div>
+   <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="addItemRow()">＋ Add Item</button>
+   <div class="item-total" id="item-total-lbl"></div>
+  </div>
+  <div class="modal-actions">
+   <button class="btn btn-ghost" onclick="closeChargeModal()">Cancel</button>
+   <button class="btn btn-blue" id="charge-modal-submit" onclick="submitCharge()">Add Charge</button>
+  </div>
+ </div>
+</div>
+
+<!-- Update CC Balance Modal -->
+<div class="modal-overlay" id="cc-modal" style="display:none;" onclick="if(event.target===this)closeCCModal()">
+ <div class="modal-box">
+  <div class="modal-title" id="cc-modal-title">Update Card Balance</div>
+  <div class="modal-field"><label class="modal-label">Today's Balance ($)</label><input class="modal-input" id="cc-balance" type="number" step="0.01" placeholder="0.00"/></div>
+  <div class="modal-row">
+   <div class="modal-field"><label class="modal-label">Due Date (day of month)</label><input class="modal-input" id="cc-dueday" type="number" min="1" max="31" placeholder="e.g. 15"/></div>
+   <div class="modal-field"><label class="modal-label">Amount Due ($)</label><input class="modal-input" id="cc-dueamt" type="number" step="0.01" placeholder="Minimum or full"/></div>
+  </div>
+  <div class="modal-field"><label class="modal-label">Notes (optional)</label><input class="modal-input" id="cc-notes" type="text" placeholder="e.g. paid minimum, pending charge…"/></div>
+  <div class="modal-actions">
+   <button class="btn btn-ghost" onclick="closeCCModal()">Cancel</button>
+   <button class="btn btn-blue" onclick="submitCC()">Save</button>
+  </div>
+ </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="cat-modal" style="display:none;" onclick="if(event.target===this)closeCatModal()">
+ <div class="modal-box">
+  <div class="modal-title">＋ Add Category</div>
+  <div class="modal-row">
+   <div class="modal-field" style="max-width:80px;"><label class="modal-label">Emoji</label><input class="modal-input" id="m-emoji" value="✨" maxlength="4"/></div>
+   <div class="modal-field"><label class="modal-label">Name</label><input class="modal-input" id="m-label" placeholder="Category name"/></div>
+  </div>
+  <div class="modal-row">
+   <div class="modal-field"><label class="modal-label">Type</label>
+    <select class="modal-select" id="m-type"><option value="N">N – Need</option><option value="W" selected>W – Want</option><option value="S">S – Savings</option></select>
+   </div>
+   <div class="modal-field"><label class="modal-label">Monthly avg ($)</label><input class="modal-input" id="m-monthly" type="number" placeholder="0"/></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px;">
+   <input type="checkbox" id="m-fixed"/><label for="m-fixed" style="cursor:pointer;">Fixed / committed expense</label>
+  </div>
+  <div class="modal-actions">
+   <button class="btn btn-ghost" onclick="closeCatModal()">Cancel</button>
+   <button class="btn btn-green" onclick="submitCat()">Add Category</button>
+  </div>
+ </div>
+</div>
+
+<!-- Add Month Modal -->
+<div class="modal-overlay" id="month-modal" style="display:none;" onclick="if(event.target===this)closeMonthModal()">
+ <div class="modal-box">
+  <div class="modal-title">📅 Add a Month</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">New months start at $0. Add charges via 💳 button.</p>
+  <div class="mo-grid" id="mo-pick-grid"></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeMonthModal()">Cancel</button></div>
+ </div>
+</div>
+
+<!-- FABs -->
+<button class="fab" id="fab-charge" onclick="openChargeModal()" title="Add a charge">💳</button>
+<button class="fab" id="fab-cat"    onclick="openCatModal()"    title="Add category">＋</button>
+<button class="fab" id="fab-chat"   onclick="toggleChat()"      title="Finance assistant">💬</button>
+
+<!-- Chat -->
+<div id="chat-panel" style="display:none;">
+ <div class="chat-head"><span class="chat-head-title">💬 Finance Assistant</span><button class="chat-close" onclick="toggleChat()">✕</button></div>
+ <div id="chat-messages"></div>
+ <div class="chat-input-row"><input id="chat-input" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')sendChat()"/><button class="chat-send" onclick="sendChat()">Send</button></div>
+</div>
+
+<script>
+const ALL_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const H1=[0,1,2,3,4,5];
+const STORAGE_KEY='nf_v8';
+
+const DEFAULT_CARDS=[
+  {id:'amex',   emoji:'💳',name:'Amex',           cc:true,  dueDay:15},
+  {id:'c1cc',   emoji:'💳',name:'CapOne CC 6110', cc:true,  dueDay:22},
+  {id:'bofa',   emoji:'🏛️',name:'Bank of America', cc:true,  dueDay:null},
+  {id:'ch_cc',  emoji:'💳',name:'Chase CC',        cc:true,  dueDay:null},
+  {id:'ch0264', emoji:'🔄',name:'Chase BT 0264',  cc:true,  dueDay:5},
+  {id:'c1chk',  emoji:'🏦',name:'CapOne Checking',cc:false, dueDay:null},
+  {id:'c1hysa', emoji:'💰',name:'CapOne HYSA',    cc:false, dueDay:null},
+  {id:'ch1581', emoji:'🎨',name:'Chase 1581',     cc:false, dueDay:null},
+];
+
+const DEFAULT_JUSTIFICATIONS=[
+  'Planned / budgeted','Ran out of product','Sale / good deal',
+  'Impulse buy','Should have skipped','Gift / for someone',
+  'Emergency','Subscription / recurring'
+];
+
+const DEFAULT={
+  settings:{income:6061,dailyBudget:100,goals:{needs:50,wants:30,savings:20}},
+  months:[...H1],
+  transactions:[],
+  cardLog:[],        // {id,cardId,date,balance,dueAmt,dueDay,notes}
+  cards:JSON.parse(JSON.stringify(DEFAULT_CARDS)),
+  justifications:[...DEFAULT_JUSTIFICATIONS],
+  categories:[
+    {id:'rent',    emoji:'🏠',label:'Rent',               type:'N',monthly:3150,mo:{0:3150,1:3150,2:3150,3:3150,4:3150,5:4975},fixed:true},
+    {id:'grocery', emoji:'🛒',label:'Groceries',          type:'N',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
+    {id:'elec',    emoji:'💡',label:'Electricity (ConEd)', type:'N',monthly:100, mo:{0:100,1:100,2:100,3:100,4:100,5:100},fixed:true,chargeDay:29},
+    {id:'internet',emoji:'🌐',label:'Internet (Verizon)', type:'N',monthly:89.99,  mo:{0:89.99,1:89.99,2:89.99,3:89.99,4:89.99,5:89.99},fixed:true,chargeDay:22},
+    {id:'phone',   emoji:'📱',label:'Phone',              type:'N',monthly:42,     mo:{0:42,1:42,2:42,3:42,4:42,5:42},fixed:true,chargeDay:12},
+    {id:'petins',  emoji:'🐾',label:'Pet Insurance',      type:'N',monthly:78.35,  mo:{0:78.35,1:78.35,2:78.35,3:78.35,4:78.35,5:78.35},fixed:true,chargeDay:9},
+    {id:'renins',  emoji:'🛡️',label:'Renter Insurance',   type:'N',monthly:22.75,  mo:{0:22.75,1:22.75,2:22.75,3:22.75,4:22.75,5:22.75},fixed:true,chargeDay:12},
+    {id:'health',  emoji:'🏥',label:'Healthcare',         type:'N',monthly:285, mo:{0:285,1:285,2:285,3:285,4:285,5:285},fixed:false},
+    {id:'therapy', emoji:'🧠',label:'Therapy (Gotham)',   type:'N',monthly:180, mo:{0:180,1:180,2:180,3:180,4:180,5:180},fixed:false},
+    {id:'dog',     emoji:'🐶',label:'Dog Daycare/Vet',    type:'N',monthly:215, mo:{0:215,1:215,2:215,3:215,4:215,5:215},fixed:false},
+    {id:'dining',  emoji:'🍽️',label:'Dining Out',         type:'W',monthly:386, mo:{0:386,1:386,2:386,3:386,4:386,5:386},fixed:false},
+    {id:'shopping',emoji:'🛍️',label:'Shopping',           type:'W',monthly:567, mo:{0:567,1:567,2:567,3:567,4:567,5:567},fixed:false},
+    {id:'beauty',  emoji:'💅',label:'Beauty & Skincare',  type:'W',monthly:449, mo:{0:449,1:449,2:449,3:449,4:449,5:449},fixed:false},
+    {id:'amazon',  emoji:'📦',label:'Amazon',             type:'W',monthly:378, mo:{0:378,1:378,2:378,3:378,4:378,5:378},fixed:false},
+    {id:'uber',    emoji:'🚗',label:'Uber',               type:'W',monthly:142, mo:{0:142,1:142,2:142,3:142,4:142,5:142},fixed:false},
+    {id:'fitness', emoji:'🏋️',label:'Fitness',            type:'W',monthly:50,  mo:{0:50,1:50,2:50,3:50,4:50,5:50},fixed:false},
+    {id:'entertain',emoji:'🎭',label:'Entertainment',     type:'W',monthly:80,  mo:{0:80,1:80,2:80,3:80,4:80,5:80},fixed:false},
+    {id:'art',     emoji:'🎨',label:'Art / Work Expenses',type:'W',monthly:60,  mo:{0:60,1:60,2:60,3:60,4:60,5:60},fixed:false},
+    {id:'hbo',     emoji:'📺',label:'HBO Max',             type:'W',monthly:2.99,  mo:{0:2.99,1:2.99,2:2.99,3:2.99,4:2.99,5:2.99},fixed:true,chargeDay:28},
+    {id:'appletv', emoji:'🍎',label:'Apple TV+',          type:'W',monthly:12.99, mo:{0:12.99,1:12.99,2:12.99,3:12.99,4:12.99,5:12.99},fixed:true,chargeDay:27},
+    {id:'icloud',  emoji:'☁️',label:'iCloud',             type:'W',monthly:9.99,  mo:{0:9.99,1:9.99,2:9.99,3:9.99,4:9.99,5:9.99},fixed:true,chargeDay:1},
+  ],
+  accounts:[
+    {id:'amex',  emoji:'💳',label:'Amex',               role:'Main CC — carrying balance'},
+    {id:'c1cc',  emoji:'💳',label:'CapOne CC (6110)',    role:'Personal credit card'},
+    {id:'bofa',  emoji:'🏛️',label:'Bank of America CC', role:'Personal credit card'},
+    {id:'ch_cc', emoji:'💳',label:'Chase CC',            role:'Personal credit card'},
+    {id:'ch0264',emoji:'🔄',label:'Chase BT (0264)',     role:'Balance transfer card'},
+    {id:'c1chk', emoji:'🏦',label:'CapOne Checking',    role:'Main checking — Consensys payroll'},
+    {id:'c1hysa',emoji:'💰',label:'CapOne HYSA (5375)', role:'Emergency fund @ 3.10% APY'},
+    {id:'ch1581',emoji:'🎨',label:'Chase (1581)',        role:'Art business checking'},
+  ],
+  sectionOrder:['snapshot','dailytracker','budget','creditcards','transactions','settings','categories','leaks','fixed','accounts'],
+  collapsed:['categories','leaks','fixed','accounts'],
+  filter:{activeMonths:[...H1]}
+};
+
+let D=loadData();
+let editState=null,expandedCats=new Set(),expandedTxns=new Set();
+let dragSrc=null,toastTimer=null;
+let chatOpen=false,chatHistory=[],chatLoading=false;
+let ccModalCardId=null;
+let selectedJustification='';
+let itemsOpen=false;
+let editingTxnId=null;
+let dailyViewDate=todayStr();
+
+// ── PERSISTENCE ─────────────────────────────────────
+// No versioned migrations. ensureShape() runs on every load, is safe to run
+// unlimited times (only fills in missing fields, never overwrites user data,
+// never has a one-time-only branch that could silently stop applying).
+function loadData(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(s){
+      const d=JSON.parse(s);
+      ensureShape(d);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(d));
+      return d;
+    }
+  }catch(e){console.warn('loadData error',e);}
+  return clone(DEFAULT);
+}
+function ensureShape(d){
+  // Structural guards — safe, never overwrite existing user data.
+  if(!d.months)d.months=[...H1];
+  if(!d.transactions)d.transactions=[];
+  if(!d.cardLog)d.cardLog=[];
+  if(!d.cards)d.cards=JSON.parse(JSON.stringify(DEFAULT_CARDS));
+  if(!d.accounts)d.accounts=JSON.parse(JSON.stringify(DEFAULT.accounts));
+  if(!d.justifications)d.justifications=[...DEFAULT_JUSTIFICATIONS];
+  if(!d.categories)d.categories=[];
+  d.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.fixed&&c.id!=='rent'&&!c.chargeDay)c.chargeDay=1;});
+  if(!d.settings)d.settings={income:6061,dailyBudget:100,goals:{needs:50,wants:30,savings:20}};
+  if(!d.settings.goals)d.settings.goals={needs:50,wants:30,savings:20};
+  if(d.settings.dailyBudget===undefined)d.settings.dailyBudget=100;
+  if(!d.sectionOrder)d.sectionOrder=[...DEFAULT.sectionOrder];
+  if(!d.collapsed)d.collapsed=[...DEFAULT.collapsed];
+  if(!d.filter||!d.filter.activeMonths)d.filter={activeMonths:[...d.months]};
+
+  // Growth: make the real current month available to track (does NOT touch
+  // d.filter — a newly-tracked month is only ever added to the picker, never
+  // forced into or out of what's currently displayed).
+  const nowMi=new Date().getMonth();
+  if(!d.months.includes(nowMi)){
+    d.months.push(nowMi);
+    d.months.sort((a,b)=>a-b);
+    d.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.mo[nowMi]===undefined)c.mo[nowMi]=c.fixed?(Number(c.monthly)||0):0;});
+  }
+}
+function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(D));flashToast();}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function flashToast(){const el=document.getElementById('toast');el.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('on'),1600);}
+
+// ── CORE ─────────────────────────────────────────────
+function dateToMi(s){return new Date(s+'T00:00:00').getMonth();}
+const n=v=>Number(v)||0;
+const p=(a,b)=>b>0?(a/b)*100:0;
+const $f=(v,d=2)=>{const x=n(v),neg=x<0;return(neg?'-$':'$')+Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});};
+const pf=v=>n(v).toFixed(1)+'%';
+const clr=v=>n(v)>=0?'c-green':'c-red';
+const gclr=(a,t)=>a<=t*.9?'c-green':a<=t?'c-yellow':'c-red';
+const gbar=(a,t)=>a<=t*.9?'#1a7f37':a<=t?'#b45309':'#cf222e';
+
+function moVal(c,mi){
+  const txns=(D.transactions||[]).filter(t=>t.catId===c.id&&dateToMi(t.date)===mi);
+  if(txns.length>0)return txns.reduce((s,t)=>s+n(t.amount),0);
+  if(c.mo&&c.mo[mi]!==undefined)return n(c.mo[mi]);
+  return n(c.monthly);
+}
+function catAvg(c){
+  const active=(D.filter?.activeMonths||D.months||H1).filter(mi=>(D.months||H1).includes(mi));
+  if(!active.length)return n(c.monthly);
+  return active.reduce((s,mi)=>s+moVal(c,mi),0)/active.length;
+}
+function compute(){
+  const inc=D.settings.income,g=D.settings.goals;
+  const cats=D.categories.map(c=>({...c,eff:catAvg(c)}));
+  const N=cats.filter(c=>c.type==='N').reduce((s,c)=>s+c.eff,0);
+  const W=cats.filter(c=>c.type==='W').reduce((s,c)=>s+c.eff,0);
+  const S=cats.filter(c=>c.type==='S').reduce((s,c)=>s+c.eff,0);
+  const total=N+W+S,left=inc-total;
+  const fixedTotal=cats.filter(c=>c.fixed).reduce((s,c)=>s+c.eff,0);
+  return{N,W,S,total,fixedTotal,left,cats,Np:p(N,inc),Wp:p(W,inc),Sp:p(S,inc),
+    Nt:inc*g.needs/100,Wt:inc*g.wants/100,St:inc*g.savings/100,burnDay:total/30};
+}
+
+// ── CARD BALANCE HELPERS ─────────────────────────────
+function getLatestCardEntry(cardId){
+  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return entries[0]||null;
+}
+function daysUntilDue(dueDay){
+  if(!dueDay)return null;
+  const now=new Date(),today=now.getDate(),m=now.getMonth(),y=now.getFullYear();
+  let nextDue=new Date(y,m,dueDay);
+  if(nextDue<=now)nextDue=new Date(y,m+1,dueDay);
+  return Math.ceil((nextDue-now)/(1000*60*60*24));
+}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+
+// ── JUSTIFICATION BADGE ──────────────────────────────
+function jClass(j){
+  if(!j)return 'j-other';
+  const jl=j.toLowerCase();
+  if(jl.includes('impulse'))return 'j-impulse';
+  if(jl.includes('planned')||jl.includes('budget')||jl.includes('subscript')||jl.includes('recurring'))return 'j-planned';
+  if(jl.includes('skip'))return 'j-skip';
+  if(jl.includes('ran out')||jl.includes('product'))return 'j-ranout';
+  if(jl.includes('sale')||jl.includes('deal'))return 'j-sale';
+  return 'j-other';
+}
+
+// ── RENDER ───────────────────────────────────────────
+function render(){
+  const t=compute();
+  const now=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('root').innerHTML=renderHeader(t,now)+renderFilterBar()+
+    `<main>${D.sectionOrder.map((id,i)=>renderSec(id,t,i)).join('')}</main>`;
+  bindDrag();
+}
+
+function renderHeader(t,now){
+  const hs=(l,v,c)=>`<div class="h-stat"><span class="h-stat-label">${l}</span><span class="h-stat-val ${c}">${v}</span></div>`;
+  return`<header><div class="h-row1"><div class="h-title">💰 Finance Dashboard</div><div class="h-date">${now}</div></div>
+  <div class="h-stats">${hs('Income',$f(D.settings.income)+'/mo','c-blue')}${hs('Fixed',$f(t.fixedTotal)+'/mo','c-yellow')}${hs('Needs',pf(t.Np),gclr(t.N,t.Nt))}${hs('Wants',pf(t.Wp),gclr(t.W,t.Wt))}${hs('Savings',pf(t.Sp),t.S>=t.St?'c-green':'c-yellow')}${hs('Surplus',$f(t.left),clr(t.left))}</div></header>`;
+}
+
+function renderFilterBar(){
+  const tracked=D.months||H1,active=D.filter?.activeMonths||tracked;
+  const btns=tracked.map(mi=>{const fut=!H1.includes(mi),on=active.includes(mi);
+    return`<button class="mbtn ${on?'on':''} ${fut?'future':''}" onclick="toggleMonth(${mi})">${ALL_MONTHS[mi]}${fut?'*':''}</button>`;
+  }).join('');
+  const lbl=active.length===0?'No months':active.length===6&&tracked.length===6?'H1 2026':active.map(mi=>ALL_MONTHS[mi]).join(', ')+' 2026';
+  return`<div class="filter-bar"><span class="filter-label">Period:</span><div class="month-btns">${btns}</div>
+  <div class="filter-sep"></div><button class="filter-chip" onclick="selectAll()">All</button><button class="filter-chip" onclick="selectNone()">None</button>
+  ${tracked.length<12?`<button class="filter-chip add-mo" onclick="openMonthModal()">＋ Month</button>`:''}
+  <span class="filter-period">${lbl}</span></div>`;
+}
+
+function renderSec(id,t,i){
+  const col=(D.collapsed||[]).includes(id);
+  const first=i===0,last=i===D.sectionOrder.length-1;
+  return`<div class="sc ${col?'collapsed':''}" data-sid="${id}">
+  <div class="sc-head"><span class="sc-drag">⠿</span><span class="sc-title">${secTitle(id)}</span>
+  <div class="sc-acts">${!first?`<button class="icon-btn" onclick="moveSection('${id}',-1)">↑</button>`:''}${!last?`<button class="icon-btn" onclick="moveSection('${id}',1)">↓</button>`:''}
+  <button class="icon-btn" onclick="toggleCol('${id}')">${col?'▶':'▼'}</button></div></div>
+  ${col?'':`<div class="sc-body">${secBody(id,t)}</div>`}</div>`;
+}
+const secTitle=id=>({snapshot:'📊 Snapshot',dailytracker:'📅 Daily Tracker',budget:'🎯 Budget',creditcards:'💳 Credit Cards',transactions:'🧾 Transactions',settings:'⚙️ Settings',categories:'📂 Categories',leaks:'🔥 Spending Leaks',fixed:'🔒 Fixed Commitments',accounts:'🏦 Accounts'})[id]||id;
+function secBody(id,t){switch(id){case'snapshot':return sectSnapshot(t);case'dailytracker':return sectDailyTracker();case'budget':return sectBudget(t);case'creditcards':return sectCreditCards();case'transactions':return sectTransactions();case'settings':return sectSettings();case'categories':return sectCategories(t);case'leaks':return sectLeaks(t);case'fixed':return sectFixed(t);case'accounts':return sectAccounts();default:return'';}}
+
+// ── DAILY TRACKER ────────────────────────────────────
+// Fixed recurring categories (everything marked "Fixed" except Rent) hit the
+// daily budget in full on their own billing day (c.chargeDay), not spread out.
+function fixedCatsForMonth(){
+  return D.categories.filter(c=>c.fixed&&c.id!=='rent');
+}
+function fixedChargeOnDay(mi,dayNum,daysInMonth){
+  return fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,daysInMonth)===dayNum)
+    .reduce((s,c)=>s+n(moVal(c,mi)),0);
+}
+function fixedChargesThroughDay(mi,throughDay,daysInMonth){
+  if(throughDay<=0)return 0;
+  return fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,daysInMonth)<=throughDay)
+    .reduce((s,c)=>s+n(moVal(c,mi)),0);
+}
+function getDailyStats(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const year=d.getFullYear(),month=d.getMonth(),dayNum=d.getDate();
+  const db=D.settings.dailyBudget;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const fixedToday=fixedChargeOnDay(month,dayNum,daysInMonth);
+  // Transactions this month up to & including this day
+  const upTo=(D.transactions||[]).filter(t=>{
+    const td=new Date(t.date+'T00:00:00');
+    return td.getFullYear()===year&&td.getMonth()===month&&td.getDate()<=dayNum;
+  });
+  // Today's transactions
+  const todayTxns=(D.transactions||[]).filter(t=>t.date===dateStr);
+  const todayTxnSpend=todayTxns.reduce((s,t)=>s+n(t.amount),0);
+  const todaySpend=todayTxnSpend+fixedToday;
+  // Carry from yesterday (cumulative budget - cumulative spend through yesterday)
+  let carryIn=0;
+  if(dayNum>1){
+    const upToYest=(D.transactions||[]).filter(t=>{
+      const td=new Date(t.date+'T00:00:00');
+      return td.getFullYear()===year&&td.getMonth()===month&&td.getDate()<=dayNum-1;
+    });
+    carryIn=(dayNum-1)*db-(upToYest.reduce((s,t)=>s+n(t.amount),0)+fixedChargesThroughDay(month,dayNum-1,daysInMonth));
+  }
+  const availableToday=carryIn+db;
+  const balanceEOD=availableToday-todaySpend;
+  const cumSpend=upTo.reduce((s,t)=>s+n(t.amount),0)+fixedChargesThroughDay(month,dayNum,daysInMonth);
+  const cumBudget=dayNum*db;
+  const monthPool=daysInMonth*db;
+  const fixedMonthTotal=fixedCatsForMonth().reduce((s,c)=>s+n(moVal(c,month)),0);
+  return{dateStr,dayNum,daysInMonth,monthPool,carryIn,db,availableToday,todaySpend,todayTxnSpend,fixedToday,fixedMonthTotal,balanceEOD,cumSpend,cumBudget,monthBalance:cumBudget-cumSpend,todayTxns};
+}
+
+function sectDailyTracker(){
+  const s=getDailyStats(dailyViewDate);
+  const today=todayStr(),isToday=dailyViewDate===today;
+  const d=new Date(dailyViewDate+'T00:00:00');
+  const dayLabel=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const catMap={};D.categories.forEach(c=>{catMap[c.id]=c;});
+  const cardMap={};(D.cards||[]).forEach(c=>{cardMap[c.id]=c;});
+  const sgn=v=>(v>=0?'+':'')+$f(v);
+  const todaysFixed=fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,s.daysInMonth)===s.dayNum);
+
+  // Navigation
+  const nav=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <button class="btn btn-ghost btn-sm" onclick="dailyNav(-1)">← Prev</button>
+    <div style="flex:1;text-align:center;font-size:14px;font-weight:700;">
+      ${dayLabel}${isToday?'&ensp;<span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 7px;border-radius:10px;font-weight:600;">Today</span>':''}
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="dailyNav(1)">Next →</button>
+  </div>`;
+
+  // 4-box summary
+  const carryClr=s.carryIn>=0?'c-green':'c-red';
+  const balClr=s.balanceEOD>=0?'c-green':'c-red';
+  const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
+    <div class="snap-box"><div class="snap-label">Carry In</div>
+      <div class="snap-val ${carryClr}">${sgn(s.carryIn)}</div>
+      <div class="snap-sub">${s.dayNum===1?'start of month':'from yesterday'}</div></div>
+    <div class="snap-box"><div class="snap-label">+ Budget</div>
+      <div class="snap-val c-blue">$${D.settings.dailyBudget}</div>
+      <div class="snap-sub">daily allowance</div></div>
+    <div class="snap-box"><div class="snap-label">− Spent</div>
+      <div class="snap-val ${s.todaySpend>0?'c-red':'c-muted'}">${$f(s.todaySpend)}</div>
+      <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?` + ${$f(s.fixedToday)} fixed bill${todaysFixed.length!==1?'s':''}`:''}</div></div>
+    <div class="snap-box"><div class="snap-label">= Balance</div>
+      <div class="snap-val ${balClr}">${sgn(s.balanceEOD)}</div>
+      <div class="snap-sub">${s.balanceEOD>=0?'carries to tomorrow ✓':'deficit ⚠'}</div></div>
+  </div>`;
+
+  // Day progress bar
+  const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
+  const barClr=s.balanceEOD>=0?'#1a7f37':'#cf222e';
+  const bar=`<div style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;">
+      <span>Available: ${sgn(s.carryIn)} carry + $${s.db} = <strong style="color:var(--text);">${$f(s.availableToday)}</strong></span>
+      <span>${$f(s.todaySpend)} spent</span>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;height:10px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:${barClr};border-radius:3px;"></div>
+    </div>
+  </div>`;
+
+  // Month context strip
+  const mbClr=s.monthBalance>=0?'c-green':'c-red';
+  const mStrip=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-bottom:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;align-items:center;">
+    <span><span class="c-muted">Pool:</span> <strong>${$f(s.monthPool)}</strong> <span class="c-muted">(${s.daysInMonth}d × $${ D.settings.dailyBudget})</span></span>
+    <span><span class="c-muted">Day ${s.dayNum}/${s.daysInMonth} — earned:</span> <strong>${$f(s.cumBudget)}</strong></span>
+    <span><span class="c-muted">Spent:</span> <strong class="${s.cumSpend>s.cumBudget?'c-red':'c-green'}">${$f(s.cumSpend)}</strong></span>
+    <span><span class="c-muted">Running:</span> <strong class="${mbClr}">${sgn(s.monthBalance)}</strong></span>
+    <span><span class="c-muted">Fixed bills this month (excl. rent):</span> <strong>${$f(s.fixedMonthTotal)}</strong></span>
+  </div>`;
+
+  // Fixed bills billing today (excl. rent) — shown separately from logged charges
+  const fixedList=todaysFixed.length?`<div style="margin-bottom:10px;">
+    <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;">🔒 Fixed bills charging today</div>
+    ${todaysFixed.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:16px;">${c.emoji}</span>
+      <div style="flex:1;min-width:0;font-size:12px;font-weight:600;">${c.label}</div>
+      <div style="font-weight:700;font-size:13px;">${$f(n(moVal(c,d.getMonth())),2)}</div>
+    </div>`).join('')}
+  </div>`:'';
+
+  // Today's charge list
+  let txnList='';
+  if(!s.todayTxns.length){
+    txnList=`<div style="text-align:center;padding:18px 0;color:var(--muted);font-size:12px;">
+      No logged charges on this day.<br>
+      <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="openChargeModalForDate('${s.dateStr}')">💳 Add Charge for ${dayLabel}</button>
+    </div>`;
+  }else{
+    const rows=s.todayTxns.map(t=>{
+      const cat=catMap[t.catId]||{emoji:'?',label:t.catId};
+      const card=cardMap[t.cardId];
+      const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:16px;">${cat.emoji}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;">${cat.label}</div>
+          ${meta?`<div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${meta}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-weight:700;font-size:13px;">${$f(n(t.amount),2)}</div>
+          <button class="btn btn-ghost btn-xs" onclick="moveTxnToNextDay('${t.id}')" title="Count this charge toward tomorrow">→ next day</button>
+        </div>
+      </div>`;
+    }).join('');
+    const dayTotal=s.todayTxns.reduce((s,t)=>s+n(t.amount),0);
+    txnList=`<div>${rows}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;">
+        <span style="font-size:12px;font-weight:700;">Total: ${$f(dayTotal,2)}</span>
+        <button class="btn btn-blue btn-sm" onclick="openChargeModalForDate('${s.dateStr}')">💳 Add Charge</button>
+      </div>`;
+  }
+
+  return nav+boxes+bar+mStrip+fixedList+txnList;
+}
+
+function dailyNav(dir){
+  const d=new Date(dailyViewDate+'T00:00:00');
+  d.setDate(d.getDate()+dir);
+  dailyViewDate=d.toISOString().split('T')[0];
+  render();
+}
+function openChargeModalForDate(dateStr){
+  openChargeModal();
+  setTimeout(()=>{const el=document.getElementById('c-date');if(el)el.value=dateStr;},80);
+}
+function moveTxnToNextDay(txnId){
+  const txn=(D.transactions||[]).find(t=>t.id===txnId);
+  if(!txn)return;
+  const d=new Date(txn.date+'T00:00:00');
+  d.setDate(d.getDate()+1);
+  txn.date=d.toISOString().split('T')[0];
+  saveData();render();
+}
+
+// ── SNAPSHOT ─────────────────────────────────────────
+function sectSnapshot(t){
+  const box=(l,v,c,s)=>`<div class="snap-box"><div class="snap-label">${l}</div><div class="snap-val ${c}">${v}</div><div class="snap-sub">${s}</div></div>`;
+  const spendPerDay=t.total/30,dayOk=spendPerDay<=D.settings.dailyBudget;
+  return`<div class="snap-grid">${box('Monthly Income',$f(D.settings.income),'c-blue','net take-home')}${box('Fixed Commitments',$f(t.fixedTotal),t.fixedTotal>D.settings.income?'c-red':'c-yellow','+ variable: '+$f(t.total)+' total')}${box('Left Over',$f(t.left),clr(t.left),t.left>=0?'surplus ✓':'deficit ⚠')}${box('Spend / Day',$f(spendPerDay)+'/d',dayOk?'c-green':'c-red','budget: $'+D.settings.dailyBudget+'/d')}</div>`;
+}
+
+// ── BUDGET ───────────────────────────────────────────
+function sectBudget(t){
+  // For Needs/Wants: under target = green. For Savings: under target = red (inverted).
+  const gc2=(a,ta,inv)=>inv?(a>=ta?'c-green':a>=ta*.5?'c-yellow':'c-red'):(a<=ta*.9?'c-green':a<=ta?'c-yellow':'c-red');
+  const gb2=(a,ta,inv)=>inv?(a>=ta?'#1a7f37':a>=ta*.5?'#b45309':'#cf222e'):(a<=ta*.9?'#1a7f37':a<=ta?'#b45309':'#cf222e');
+  const rows=[
+    {l:'🏠 Needs',  a:t.N,ta:t.Nt,pA:t.Np,pT:D.settings.goals.needs, inv:false},
+    {l:'✨ Wants',  a:t.W,ta:t.Wt,pA:t.Wp,pT:D.settings.goals.wants,  inv:false},
+    {l:'💰 Savings',a:t.S,ta:t.St,pA:t.Sp,pT:D.settings.goals.savings,inv:true},
+  ];
+  return`<div class="budget-layout"><div>${rows.map(r=>{
+    const diff=r.a-r.ta,over=diff>0,goodLabel=r.inv?(over?'above target ✓':'below target ⚠'):(over?'over budget ⚠':'under budget ✓');
+    return`<div class="gauge"><div class="gauge-lbl">${r.l}</div><div class="gauge-track"><div class="gauge-fill" style="width:${Math.min(r.pA,100)}%;background:${gb2(r.a,r.ta,r.inv)};"></div><div class="gauge-tgt" style="left:${Math.min(r.pT,99)}%;"></div></div>
+    <div class="gauge-nums"><div class="${gc2(r.a,r.ta,r.inv)}" style="font-weight:700;">${pf(r.pA)} <span class="c-muted" style="font-size:10px;">/ ${r.pT}%</span></div><div class="${gc2(r.a,r.ta,r.inv)}" style="font-size:10px;">${$f(Math.abs(diff))} ${goodLabel}</div></div></div>`;
+  }).join('')}<div style="font-size:10px;color:var(--muted);margin-top:3px;">Vertical mark = your target. Green = on track.</div></div>
+  <div><div class="chart-box">${budgetDonutSVG(t)}</div></div></div>`;
+}
+function budgetDonutSVG(t){
+  const slices=[
+    {label:'Needs',  v:t.N,             color:'#0969da'},
+    {label:'Wants',  v:t.W,             color:'#7c3aed'},
+    {label:'Savings',v:t.S,             color:'#1a7f37'},
+    {label:'Surplus',v:Math.max(0,t.left),color:'#b45309'},
+  ].filter(s=>s.v>0);
+  const total=slices.reduce((s,x)=>s+x.v,0)||1;
+  const r=52,c=2*Math.PI*r,cx=70,cy=70;
+  let offset=0;
+  const arcs=slices.map(s=>{
+    const frac=s.v/total,len=frac*c;
+    const dash=`${len} ${c-len}`;
+    const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="20" stroke-dasharray="${dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"><title>${s.label}: ${$f(s.v)} (${pf(p(s.v,total))})</title></circle>`;
+    offset+=len;
+    return el;
+  }).join('');
+  const legend=slices.map(s=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;"></span>${s.label}</div>`).join('');
+  return`<div style="display:flex;align-items:center;gap:10px;height:100%;">
+    <svg width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;">${arcs}</svg>
+    <div style="display:flex;flex-direction:column;gap:5px;">${legend}</div>
+  </div>`;
+}
+
+// ── CREDIT CARDS ─────────────────────────────────────
+function sectCreditCards(){
+  const ccs=(D.cards||DEFAULT_CARDS).filter(c=>c.cc);
+  if(!ccs.length)return`<div class="c-muted">No credit cards configured.</div>`;
+  const cards=ccs.map(card=>{
+    const entry=getLatestCardEntry(card.id);
+    const bal=entry?n(entry.balance):null;
+    const dueDay=entry?.dueDay||card.dueDay||null;
+    const dueAmt=entry?.dueAmt||null;
+    const days=daysUntilDue(dueDay);
+    const urgent=days!==null&&days<=3;
+    const soon=days!==null&&days<=7&&!urgent;
+    const asOf=entry&&entry.date!==todayStr()?`<span style="font-weight:400;font-size:10px;color:var(--muted);"> as of ${entry.date}</span>`:'';
+    const dueStr=dueDay?`Due ${ordinal(dueDay)} — ${days!==null?`<strong class="${urgent?'c-red':soon?'c-yellow':'c-green'}">${days}d</strong>`:'?'}${dueAmt?` — $${$f(n(dueAmt))} due`:''}`:'<span class="c-muted">No due date set</span>';
+    const notesStr=entry?.notes?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic;">${entry.notes}</div>`:'';
+    return`<div class="cc-card ${urgent?'urgent':soon?'soon':''}">
+      <div class="cc-name">${card.emoji} ${card.name}</div>
+      <div class="cc-bal ${bal!==null?'c-red':'c-muted'}">${bal!==null?$f(bal,2):'—'}${asOf}</div>
+      <div class="cc-meta">${entry?'Updated today':'Not updated yet'}</div>
+      <div class="cc-due">${dueStr}</div>
+      ${notesStr}
+      <div class="cc-actions">
+        <button class="btn btn-blue btn-sm" onclick="openCCModal('${card.id}')">Update</button>
+        ${entry?`<button class="btn btn-ghost btn-sm" onclick="viewCardHistory('${card.id}')">History</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  return`<div class="hint">📋 Personal reference only — these balances <strong>do not</strong> affect your budget, leftover, or Spend/Day. Enter a balance whenever you check your accounts; the last entry carries forward if you skip a day.</div>
+  <div class="cc-grid">${cards}</div>
+  <div style="font-size:10px;color:var(--muted);margin-top:8px;">Red = due within 3 days · Yellow = within 7 days · Tap "Update" to log today's balance or set a due date.</div>`;
+}
+
+// ── TRANSACTIONS ─────────────────────────────────────
+function sectTransactions(){
+  const tracked=D.months||H1,active=D.filter?.activeMonths||tracked;
+  const allTxns=[...(D.transactions||[])].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const visible=allTxns.filter(t=>active.includes(dateToMi(t.date)));
+  const catMap={};D.categories.forEach(c=>{catMap[c.id]=c;});
+  const cardMap={};(D.cards||[]).forEach(c=>{cardMap[c.id]=c;});
+  const addBtn=`<button class="btn btn-blue btn-sm" onclick="openChargeModal()" style="margin-bottom:10px;">💳 Add Charge</button>`;
+  if(!visible.length)return`${addBtn}<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No charges in the selected period.<br>Tap <strong>💳</strong> (bottom-left) or the button above.</div>`;
+  const byMonth={};
+  visible.forEach(t=>{const mi=dateToMi(t.date);if(!byMonth[mi])byMonth[mi]=[];byMonth[mi].push(t);});
+  let rows='',grandTotal=0;
+  Object.keys(byMonth).sort((a,b)=>b-a).forEach(mi=>{
+    const mTxns=byMonth[mi];
+    const mTotal=mTxns.reduce((s,t)=>s+n(t.amount),0);
+    grandTotal+=mTotal;
+    rows+=`<tr class="txn-month-head"><td colspan="7">${ALL_MONTHS[mi]} 2026${!H1.includes(Number(mi))?'*':''}<span style="float:right;">${$f(mTotal,2)}</span></td></tr>`;
+    mTxns.forEach(t=>{
+      const cat=catMap[t.catId]||{emoji:'?',label:t.catId,type:'W'};
+      const card=cardMap[t.cardId];
+      const hasItems=t.items&&t.items.length>0;
+      const isExp=expandedTxns.has(t.id);
+      rows+=`<tr>
+        <td class="hide-sm" style="color:var(--muted);font-size:10px;white-space:nowrap;">${t.date}</td>
+        <td>${cat.emoji} <span style="font-size:12px;">${cat.label}</span></td>
+        <td class="hide-sm"><span class="pill pill-${cat.type}">${cat.type}</span></td>
+        <td class="hide-sm">${card?`<span style="font-size:11px;">${card.emoji} ${card.name}</span>`:'<span class="c-muted">—</span>'}</td>
+        <td>${t.justification?`<span class="j-badge ${jClass(t.justification)}">${t.justification}</span>`:'<span class="c-muted" style="font-size:10px;">—</span>'}</td>
+        <td style="font-weight:600;white-space:nowrap;">${$f(n(t.amount),2)}</td>
+        <td style="white-space:nowrap;">
+          ${t.desc?`<span class="hide-sm" style="color:var(--muted);font-size:11px;margin-right:4px;">${t.desc}</span>`:''}
+          ${hasItems?`<button class="btn-expand" onclick="toggleTxn('${t.id}')">${isExp?'▲':'▼'}</button>`:''}
+          <button class="del-btn" onclick="openChargeModal('${t.id}')" title="Edit">✎</button>
+          <button class="del-btn" onclick="deleteTxn('${t.id}')" title="Delete">×</button>
+        </td>
+      </tr>`;
+      if(hasItems&&isExp){
+        rows+=`<tr class="txn-items-row"><td colspan="7"><div class="txn-items-inner">
+          <span style="font-size:10px;color:var(--muted);font-weight:600;width:100%;margin-bottom:2px;">Receipt items:</span>
+          ${t.items.map(it=>`<div class="item-chip"><span>${it.name}</span><span class="chip-amt">${$f(n(it.amount),2)}</span></div>`).join('')}
+        </div></td></tr>`;
+      }
+    });
+  });
+  rows+=`<tr class="txn-total-row"><td colspan="5">Total (selected period)</td><td colspan="2">${$f(grandTotal,2)}</td></tr>`;
+  return`${addBtn}<div style="overflow-x:auto;"><table class="txn-table">
+    <thead><tr><th class="hide-sm">Date</th><th>Category</th><th class="hide-sm">Type</th><th class="hide-sm">Card</th><th>Why</th><th>Amount</th><th>Details</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+  <div style="font-size:10px;color:var(--muted);margin-top:6px;">▼ expand a row to see receipt items.</div>`;
+}
+
+// ── SETTINGS ─────────────────────────────────────────
+function sectSettings(){
+  const g=D.settings.goals,total=g.needs+g.wants+g.savings;
+  const ok=total===100,over=total>100;
+  return`<div class="hint">⚡ Set Needs % and Wants % — Savings fills the remainder automatically. Must total 100%.</div>
+  <div class="settings-grid">
+    <div class="set-item"><label class="set-label">Monthly Income ($)</label><input class="set-input" type="number" value="${D.settings.income}" onblur="setSetting('income',this.value)" onchange="setSetting('income',this.value)"/></div>
+    <div class="set-item"><label class="set-label">Daily Budget ($)</label><input class="set-input" type="number" value="${D.settings.dailyBudget}" onblur="setSetting('dailyBudget',this.value)" onchange="setSetting('dailyBudget',this.value)"/></div>
+    <div class="set-item"><label class="set-label">🏠 Needs Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.needs}" onblur="setGoal('needs',this.value)" onchange="setGoal('needs',this.value)"/></div>
+    <div class="set-item"><label class="set-label">✨ Wants Goal %</label><input class="set-input" type="number" min="0" max="100" value="${g.wants}" onblur="setGoal('wants',this.value)" onchange="setGoal('wants',this.value)"/></div>
+    <div class="set-item"><label class="set-label">💰 Savings (auto) %</label>
+      <div class="set-input" style="background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:800;padding:6px 10px;border-radius:6px;border:1px solid;">${g.savings}%</div>
+    </div>
+  </div>
+  ${!ok?`<div class="hint hint-yellow" style="margin-top:8px;">Total: ${total}% ${over?'(over — reduce Needs or Wants)':'(under — will auto-fix on next change)'}</div>`:''}
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-blue btn-sm" onclick="openMonthModal()">📅 Add Month</button>
+    <button class="btn btn-red btn-sm" onclick="openRemoveMonthModal()">🗑️ Remove a Month</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 Reset all defaults</button>
+  </div>`;
+}
+
+// ── CATEGORIES ───────────────────────────────────────
+function sectCategories(t){
+  const es=editState,tracked=D.months||H1,active=D.filter?.activeMonths||tracked;
+  const rows=t.cats.map((c,i)=>{
+    const isExp=expandedCats.has(i);
+    const eEmoji=es&&es.type==='cat'&&es.idx===i&&es.field==='emoji';
+    const eLabel=es&&es.type==='cat'&&es.idx===i&&es.field==='label';
+    const eAmt=es&&es.type==='cat'&&es.idx===i&&es.field==='monthly';
+    const main=`<tr>
+      <td>${eEmoji?`<input class="edit-input emoji" id="ei" value="${c.emoji}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'emoji')">${c.emoji}</span>`}
+      &nbsp;${eLabel?`<input class="edit-input wide" id="ei" value="${c.label}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'label')">${c.label}</span>`}</td>
+      <td class="hide-sm"><select class="type-sel" onchange="setCatType(${i},this.value)"><option value="N" ${c.type==='N'?'selected':''}>N</option><option value="W" ${c.type==='W'?'selected':''}>W</option><option value="S" ${c.type==='S'?'selected':''}>S</option></select></td>
+      <td>${eAmt?`<input class="edit-input" id="ei" type="number" step="0.01" value="${c.eff.toFixed(2)}" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<span class="ev" onclick="startEdit('cat',${i},'monthly')">${$f(c.eff)}</span>`}</td>
+      <td class="c-muted hide-sm" style="font-size:11px;">${pf(p(c.eff,D.settings.income))}</td>
+      <td class="hide-sm">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;"><input type="checkbox" ${c.fixed?'checked':''} onchange="setCatFixed(${i},this.checked)"> Fixed</label>
+        ${c.fixed&&c.id!=='rent'?`<label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);margin-top:2px;">Day <input type="number" min="1" max="31" value="${c.chargeDay||1}" style="width:34px;padding:1px 3px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);" onchange="setCatChargeDay(${i},this.value)"/></label>`:''}
+      </td>
+      <td><button class="btn-expand" onclick="toggleExpand(${i})">${isExp?'▲':'▼'}</button><button class="btn btn-red btn-sm" onclick="delCat(${i})">×</button></td>
+    </tr>`;
+    const moRow=isExp?`<tr class="expand-row"><td colspan="6"><div class="months-edit">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;width:100%;margin-bottom:4px;">Per-month breakdown</div>
+      ${tracked.map(mi=>{const fut=!H1.includes(mi),isAct=active.includes(mi),hasTxn=(D.transactions||[]).some(t=>t.catId===c.id&&dateToMi(t.date)===mi),val=moVal(c,mi);
+        return`<div class="mo-field"><label class="mo-label">${ALL_MONTHS[mi]}${fut?'*':''}</label>
+        <div class="mo-value ${hasTxn?'from-txn':''} ${!hasTxn&&isAct&&!fut?'active-mo':''} ${fut&&isAct?'future-mo':''}" title="${hasTxn?'From charges':'Manual'}">${hasTxn?'💳 ':''}${$f(val)}</div></div>`;}).join('')}
+    </div></td></tr>`:'';
+    return main+moRow;
+  }).join('');
+  return`<div class="hint">⚡ Click any amount to edit. Changes sync across all sections immediately.</div>
+  <div style="overflow-x:auto;"><table class="cat-table">
+    <thead><tr><th>Category</th><th class="hide-sm">Type</th><th>Avg/Mo</th><th class="hide-sm">%</th><th class="hide-sm">Fixed</th><th></th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td colspan="2">TOTAL</td><td>${$f(t.total)}</td><td class="c-muted hide-sm" style="font-size:11px;">${pf(p(t.total,D.settings.income))}</td><td colspan="2"></td></tr></tbody>
+  </table></div>
+  <div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="openCatModal()">＋ Add Category</button></div>`;
+}
+
+// ── LEAKS ────────────────────────────────────────────
+function sectLeaks(t){
+  const wants=[...t.cats].filter(c=>c.type==='W').sort((a,b)=>b.eff-a.eff);
+  if(!wants.length)return`<div class="c-muted">No Want categories.</div>`;
+  const mx=wants[0].eff||1;
+  return`<div style="margin-bottom:10px;font-size:12px;">Wants: <strong class="${gclr(t.W,t.Wt)}">${$f(t.W)}/mo</strong> vs target <strong>${$f(t.Wt)}/mo</strong></div>
+  ${wants.map(c=>`<div class="leak"><div class="leak-lbl"><span>${c.emoji} ${c.label}</span><span class="${c.eff>200?'c-red':'c-green'}" style="font-weight:600;">${$f(c.eff)}/mo</span></div><div class="leak-track"><div class="leak-fill" style="width:${p(c.eff,mx)}%;background:${c.eff>200?'#cf222e':'#1a7f37'};"></div></div></div>`).join('')}`;
+}
+
+// ── FIXED ────────────────────────────────────────────
+function sectFixed(t){
+  const fixed=t.cats.filter(c=>c.fixed);
+  if(!fixed.length)return`<div class="c-muted">No fixed commitments.</div>`;
+  const tot=fixed.reduce((s,c)=>s+c.eff,0);
+  return fixed.map(c=>`<div class="acc-row"><div><div class="acc-name">${c.emoji} ${c.label}</div><div class="acc-role"><span class="pill pill-${c.type}">${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'}</span></div></div><div class="acc-bal">${$f(c.eff)}/mo</div></div>`).join('')+
+  `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px;margin-top:8px;display:flex;justify-content:space-between;"><div style="font-weight:700;">Total Fixed</div><div class="${p(tot,D.settings.income)>70?'c-red':'c-yellow'}" style="font-size:17px;font-weight:800;">${$f(tot)}/mo</div></div>`;
+}
+
+// ── ACCOUNTS ─────────────────────────────────────────
+function sectAccounts(){
+  const es=editState;
+  return D.accounts.map((a,i)=>{
+    const editing=es&&es.type==='acc'&&es.idx===i,has=a.balance!=null&&a.balance!==0;
+    return`<div class="acc-row"><div><div class="acc-name">${a.emoji} ${a.label}</div><div class="acc-role">${a.role}</div></div>
+    <div>${editing?`<input class="edit-input" id="ei" type="number" value="${a.balance||0}" style="width:110px;" onblur="commitEdit()" onkeydown="edKD(event)"/>`:`<div class="acc-bal ${has?clr(a.balance):'c-muted'}" onclick="startEdit('acc',${i})" style="cursor:pointer;${has?'':'font-size:12px;'}">${has?$f(a.balance):'tap to set'}</div>`}</div></div>`;
+  }).join('')+`<div style="font-size:10px;color:var(--muted);margin-top:7px;">Tap any balance to update.</div>`;
+}
+
+
+// ── FILTER ───────────────────────────────────────────
+function toggleMonth(mi){if(!D.filter)D.filter={activeMonths:[...(D.months||H1)]};const arr=D.filter.activeMonths,idx=arr.indexOf(mi);if(idx>=0)arr.splice(idx,1);else{arr.push(mi);arr.sort((a,b)=>a-b);}saveData();render();}
+function selectAll(){D.filter={activeMonths:[...(D.months||H1)]};saveData();render();}
+function selectNone(){D.filter={activeMonths:[]};saveData();render();}
+
+// ── ADD MONTH ────────────────────────────────────────
+function openMonthModal(){
+  const tracked=D.months||H1;
+  document.getElementById('mo-pick-grid').innerHTML=ALL_MONTHS.map((m,mi)=>{const ex=tracked.includes(mi);return`<div class="mo-pick ${ex?'exists':''}" onclick="${ex?'':'addMonth('+mi+')'}">${m} 2026${ex?'<br><span style="font-size:9px">added</span>':''}</div>`;}).join('');
+  document.querySelector('#month-modal .modal-title').textContent='📅 Add a Month';
+  document.querySelector('#month-modal p').textContent='New months start at $0. Add charges via 💳 button.';
+  document.getElementById('month-modal').style.display='flex';
+}
+function closeMonthModal(){document.getElementById('month-modal').style.display='none';}
+function addMonth(mi){
+  if(!D.months)D.months=[...H1];
+  if(D.months.includes(mi))return;
+  D.months.push(mi);D.months.sort((a,b)=>a-b);
+  if(!D.filter)D.filter={activeMonths:[...D.months]};else{D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}
+  // Fixed commitments carry their monthly amount; variable categories start at $0
+  D.categories.forEach(c=>{if(!c.mo)c.mo={};c.mo[mi]=c.fixed?n(c.monthly):0;});
+  closeMonthModal();saveData();render();
+}
+
+// ── CC MODAL ─────────────────────────────────────────
+function openCCModal(cardId){
+  ccModalCardId=cardId;
+  const card=(D.cards||[]).find(c=>c.id===cardId);
+  const last=getLatestCardEntry(cardId);
+  document.getElementById('cc-modal-title').textContent=`Update ${card?.name||cardId}`;
+  document.getElementById('cc-balance').value=last?last.balance:'';
+  document.getElementById('cc-dueday').value=last?.dueDay||card?.dueDay||'';
+  document.getElementById('cc-dueamt').value=last?.dueAmt||'';
+  document.getElementById('cc-notes').value='';
+  document.getElementById('cc-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('cc-balance').focus(),50);
+}
+function closeCCModal(){document.getElementById('cc-modal').style.display='none';ccModalCardId=null;}
+function submitCC(){
+  const bal=n(document.getElementById('cc-balance').value);
+  const dueDay=n(document.getElementById('cc-dueday').value)||null;
+  const dueAmt=n(document.getElementById('cc-dueamt').value)||null;
+  const notes=document.getElementById('cc-notes').value.trim();
+  if(!ccModalCardId)return;
+  if(!D.cardLog)D.cardLog=[];
+  D.cardLog.push({id:'clog_'+Date.now(),cardId:ccModalCardId,date:todayStr(),balance:bal,dueDay,dueAmt,notes});
+  // Update card's dueDay setting
+  const card=(D.cards||[]).find(c=>c.id===ccModalCardId);
+  if(card&&dueDay)card.dueDay=dueDay;
+  closeCCModal();saveData();render();
+}
+function viewCardHistory(cardId){
+  const card=(D.cards||[]).find(c=>c.id===cardId);
+  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+  alert(`${card?.name||cardId} — Last 10 entries:\n\n`+entries.map(e=>`${e.date}: $${$f(n(e.balance),2)}${e.dueAmt?` (due $${$f(n(e.dueAmt),2)})`:''}`).join('\n'));
+}
+function ordinal(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+
+// ── ADD / EDIT CHARGE MODAL ───────────────────────────
+function openChargeModal(txnId){
+  editingTxnId=txnId||null;
+  const editing=(D.transactions||[]).find(t=>t.id===editingTxnId);
+  selectedJustification=editing?(editing.justification||''):'';
+  itemsOpen=false;
+  document.getElementById('c-date').value=editing?editing.date:todayStr();
+  document.getElementById('c-amount').value=editing?editing.amount:'';
+  document.getElementById('c-desc').value=editing?(editing.desc||''):'';
+  document.getElementById('items-section').style.display='none';
+  document.getElementById('items-list').innerHTML='';
+  document.getElementById('items-toggle-lbl').textContent='Add receipt items (optional)';
+  // Cards dropdown
+  const cardSel=document.getElementById('c-card');
+  cardSel.innerHTML=`<option value="">— cash / no card —</option>`+(D.cards||[]).map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  if(editing)cardSel.value=editing.cardId||'';
+  // Categories dropdown
+  document.getElementById('c-cat').innerHTML=D.categories.map(c=>`<option value="${c.id}">${c.emoji} ${c.label} (${c.type==='N'?'Need':c.type==='W'?'Want':'Savings'})</option>`).join('');
+  if(editing)document.getElementById('c-cat').value=editing.catId;
+  // Justification picker
+  renderJPicker();
+  // Receipt items
+  if(editing&&editing.items&&editing.items.length){
+    itemsOpen=true;
+    document.getElementById('items-section').style.display='block';
+    document.getElementById('items-toggle-lbl').textContent='▲ Hide receipt items';
+    editing.items.forEach(it=>{
+      addItemRow();
+      const row=document.getElementById('items-list').lastElementChild;
+      row.querySelector('.iname').value=it.name;
+      row.querySelector('.iamt').value=it.amount;
+    });
+    syncItemTotal();
+  }
+  document.getElementById('charge-modal-title').textContent=editing?'✎ Edit Charge':'💳 Add Charge';
+  document.getElementById('charge-modal-submit').textContent=editing?'Save Changes':'Add Charge';
+  document.getElementById('charge-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('c-amount').focus(),50);
+}
+function renderJPicker(){
+  document.getElementById('j-picker').innerHTML=(D.justifications||[]).map(j=>`<div class="j-option ${selectedJustification===j?'selected':''}" onclick="selectJ('${j.replace(/'/g,"\\'")}')"><span class="j-badge ${jClass(j)}" style="border:none;background:none;padding:0;">${j}</span></div>`).join('');
+}
+function selectJ(j){selectedJustification=selectedJustification===j?'':j;renderJPicker();}
+function addJustification(){
+  const el=document.getElementById('j-new'),v=el.value.trim();
+  if(!v)return;
+  if(!D.justifications)D.justifications=[];
+  if(!D.justifications.includes(v)){D.justifications.push(v);saveData();}
+  el.value='';selectedJustification=v;renderJPicker();
+}
+function toggleItems(){
+  itemsOpen=!itemsOpen;
+  document.getElementById('items-section').style.display=itemsOpen?'block':'none';
+  document.getElementById('items-toggle-lbl').textContent=itemsOpen?'▲ Hide receipt items':'Add receipt items (optional)';
+  if(itemsOpen&&document.getElementById('items-list').children.length===0)addItemRow();
+}
+function addItemRow(){
+  const list=document.getElementById('items-list');
+  const row=document.createElement('div');row.className='item-row';
+  row.innerHTML=`<input class="iname" type="text" placeholder="Item name" oninput="syncItemTotal()"/>
+    <input class="iamt" type="number" step="0.01" placeholder="$0.00" oninput="syncItemTotal()"/>
+    <button class="del-btn" onclick="this.parentElement.remove();syncItemTotal()">×</button>`;
+  list.appendChild(row);
+}
+function syncItemTotal(){
+  const rows=document.querySelectorAll('#items-list .item-row');
+  const sum=Array.from(rows).reduce((s,r)=>s+n(r.querySelector('.iamt').value),0);
+  const lbl=document.getElementById('item-total-lbl');
+  if(sum>0){lbl.textContent=`Items total: ${$f(sum,2)}`;
+    const amtEl=document.getElementById('c-amount');
+    if(!amtEl.value||n(amtEl.value)===0)amtEl.value=sum.toFixed(2);
+  }else{lbl.textContent='';}
+}
+function closeChargeModal(){editingTxnId=null;document.getElementById('charge-modal').style.display='none';}
+function submitCharge(){
+  const amt=n(document.getElementById('c-amount').value);
+  const date=document.getElementById('c-date').value;
+  const catId=document.getElementById('c-cat').value;
+  const cardId=document.getElementById('c-card').value||null;
+  const desc=document.getElementById('c-desc').value.trim();
+  if(!amt||amt<=0){alert('Please enter an amount.');return;}
+  if(!date){alert('Please select a date.');return;}
+  // Collect items
+  const items=[];
+  document.querySelectorAll('#items-list .item-row').forEach(r=>{
+    const nm=r.querySelector('.iname').value.trim(),am=n(r.querySelector('.iamt').value);
+    if(nm||am>0)items.push({name:nm||'Item',amount:am});
+  });
+  // Auto-add month
+  const mi=dateToMi(date);
+  if(!D.months)D.months=[...H1];
+  if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);if(!D.filter)D.filter={activeMonths:[...D.months]};else{D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}D.categories.forEach(c=>{if(!c.mo)c.mo={};c.mo[mi]=0;});}
+  if(!D.transactions)D.transactions=[];
+  if(editingTxnId){
+    const t=D.transactions.find(x=>x.id===editingTxnId);
+    if(t){Object.assign(t,{date,catId,amount:amt,desc,cardId,justification:selectedJustification,items});}
+  }else{
+    D.transactions.push({id:'txn_'+Date.now(),date,catId,amount:amt,desc,cardId,justification:selectedJustification,items});
+  }
+  editingTxnId=null;
+  closeChargeModal();saveData();render();
+}
+function toggleTxn(id){expandedTxns.has(id)?expandedTxns.delete(id):expandedTxns.add(id);render();}
+function deleteTxn(id){if(!confirm('Delete this charge?'))return;D.transactions=D.transactions.filter(t=>t.id!==id);saveData();render();}
+
+// ── SECTION / CATEGORY HANDLERS ──────────────────────
+function setSetting(k,v){D.settings[k]=n(v);saveData();render();}
+function setGoal(k,v){
+  const g=D.settings.goals;
+  g[k]=Math.max(0,Math.min(100,n(v)));
+  // Auto-balance: changing Needs or Wants → Savings fills the remainder
+  // Changing Savings → Wants fills the remainder
+  if(k==='savings'){g.wants=Math.max(0,100-g.needs-g.savings);}
+  else{g.savings=Math.max(0,100-g.needs-g.wants);}
+  saveData();render();
+}
+function moveSection(id,dir){const o=D.sectionOrder,i=o.indexOf(id),j=i+dir;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];saveData();render();}
+function toggleCol(id){if(!D.collapsed)D.collapsed=[];const i=D.collapsed.indexOf(id);if(i>=0)D.collapsed.splice(i,1);else D.collapsed.push(id);saveData();render();}
+function setCatType(i,v){D.categories[i].type=v;saveData();render();}
+function setCatFixed(i,v){D.categories[i].fixed=v;if(v&&!D.categories[i].chargeDay)D.categories[i].chargeDay=1;saveData();render();}
+function setCatChargeDay(i,v){D.categories[i].chargeDay=Math.max(1,Math.min(31,n(v)||1));saveData();render();}
+function toggleExpand(i){expandedCats.has(i)?expandedCats.delete(i):expandedCats.add(i);render();}
+function delCat(i){if(!confirm(`Delete "${D.categories[i].label}"?`))return;D.categories.splice(i,1);expandedCats.delete(i);saveData();render();}
+function resetAll(){if(!confirm('Reset everything to H1 2026 defaults? All charges and card logs will be cleared.'))return;D=clone(DEFAULT);expandedCats.clear();expandedTxns.clear();saveData();render();}
+
+// ── REMOVE MONTH (general-purpose, not tied to any specific month) ─────
+function openRemoveMonthModal(){
+  const tracked=D.months||H1;
+  if(!tracked.length){alert('No months tracked yet.');return;}
+  document.getElementById('mo-pick-grid').innerHTML=tracked.map(mi=>
+    `<div class="mo-pick" onclick="removeMonth(${mi})">${ALL_MONTHS[mi]} 2026</div>`
+  ).join('');
+  document.querySelector('#month-modal .modal-title').textContent='🗑️ Remove a Month';
+  document.querySelector('#month-modal p').textContent='Deletes that month\'s tracking, charges, and per-month category amounts. Cannot be undone.';
+  document.getElementById('month-modal').style.display='flex';
+}
+function removeMonth(mi){
+  const name=ALL_MONTHS[mi];
+  const txnCount=(D.transactions||[]).filter(t=>dateToMi(t.date)===mi).length;
+  if(!confirm(`Remove ${name} 2026?\n\n• Delete ${txnCount} charge${txnCount!==1?'s':''}\n• Remove ${name} from all category breakdowns\n• Remove ${name} from the month picker\n\nThis cannot be undone.`))return;
+  D.months=(D.months||[]).filter(m=>m!==mi);
+  D.transactions=(D.transactions||[]).filter(t=>dateToMi(t.date)!==mi);
+  D.categories.forEach(c=>{if(c.mo)delete c.mo[mi];});
+  if(D.filter)D.filter.activeMonths=(D.filter.activeMonths||[]).filter(m=>m!==mi);
+  if(!D.filter||!D.filter.activeMonths.length)D.filter={activeMonths:[...(D.months||H1)]};
+  closeMonthModal();saveData();render();
+}
+
+// ── INLINE EDIT ──────────────────────────────────────
+function startEdit(type,idx,field){editState={type,idx,field};render();setTimeout(()=>{const el=document.getElementById('ei');if(el){el.focus();el.select();}},30);}
+function commitEdit(){
+  const el=document.getElementById('ei');
+  if(!el||!editState){editState=null;render();return;}
+  const{type,idx,field}=editState;
+  if(type==='cat'){
+    if(field==='monthly'){
+      const v=n(el.value);D.categories[idx].monthly=v;
+      if(!D.categories[idx].mo)D.categories[idx].mo={};
+      const catId=D.categories[idx].id;
+      (D.months||H1).forEach(mi=>{const hasTxn=(D.transactions||[]).some(t=>t.catId===catId&&dateToMi(t.date)===mi);if(!hasTxn)D.categories[idx].mo[mi]=v;});
+    }else{D.categories[idx][field]=el.value;}
+  }else if(type==='acc'){D.accounts[idx].balance=n(el.value);}
+  editState=null;saveData();render();
+}
+function edKD(e){if(e.key==='Enter'){e.preventDefault();commitEdit();}if(e.key==='Escape'){editState=null;render();}}
+
+// ── ADD CATEGORY MODAL ────────────────────────────────
+function openCatModal(){
+  document.getElementById('cat-modal').style.display='flex';
+  document.getElementById('m-label').value='';document.getElementById('m-emoji').value='✨';
+  document.getElementById('m-monthly').value='';document.getElementById('m-type').value='W';
+  document.getElementById('m-fixed').checked=false;
+  setTimeout(()=>document.getElementById('m-label').focus(),50);
+}
+function closeCatModal(){document.getElementById('cat-modal').style.display='none';}
+function submitCat(){
+  const label=document.getElementById('m-label').value.trim();
+  if(!label){alert('Please enter a name.');return;}
+  const amt=n(document.getElementById('m-monthly').value);
+  const mo={};(D.months||H1).forEach(mi=>{mo[mi]=H1.includes(mi)?amt:0;});
+  const fixed=document.getElementById('m-fixed').checked;
+  D.categories.push({id:'cat_'+Date.now(),emoji:document.getElementById('m-emoji').value||'✨',label,type:document.getElementById('m-type').value,monthly:amt,mo,fixed,chargeDay:fixed?1:undefined});
+  closeCatModal();saveData();render();
+}
+
+// ── DRAG & DROP ──────────────────────────────────────
+function bindDrag(){
+  document.querySelectorAll('.sc').forEach(el=>{
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart',e=>{dragSrc=el.dataset.sid;setTimeout(()=>el.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',()=>{document.querySelectorAll('.sc').forEach(x=>x.classList.remove('dragging','over'));dragSrc=null;});
+    el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});
+    el.addEventListener('dragleave',()=>el.classList.remove('over'));
+    el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');if(!dragSrc||dragSrc===el.dataset.sid)return;const o=D.sectionOrder,si=o.indexOf(dragSrc),ti=o.indexOf(el.dataset.sid);if(si<0||ti<0)return;o.splice(si,1);o.splice(ti,0,dragSrc);saveData();render();});
+  });
+}
+
+// ── CHAT ─────────────────────────────────────────────
+function toggleChat(){chatOpen=!chatOpen;document.getElementById('chat-panel').style.display=chatOpen?'flex':'none';if(chatOpen)setTimeout(()=>document.getElementById('chat-input').focus(),80);renderChat();}
+function renderChat(){const box=document.getElementById('chat-messages');if(!box)return;if(!chatHistory.length){box.innerHTML=`<div class="chat-empty">Ask about your spending, cards, or layout.<br><br>"What card am I using most?"<br>"Where am I impulse buying?"<br>"How do I add a receipt?"</div>`;return;}box.innerHTML=chatHistory.map(m=>`<div class="chat-msg ${m.role}">${m.content}</div>`).join('');box.scrollTop=box.scrollHeight;}
+async function sendChat(){
+  const inp=document.getElementById('chat-input'),msg=inp.value.trim();if(!msg||chatLoading)return;
+  inp.value='';chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:'…'});chatLoading=true;renderChat();
+  const t=compute(),ctx=buildCtx(t);
+  try{let r;if(typeof window.cowork!=='undefined'&&window.cowork.askClaude){r=await window.cowork.askClaude(`Concise personal finance assistant for Nataliia (NYC, Consensys, 50/30/20 goal). Answer in 2-4 sentences, no markdown. Data: ${ctx}. Question: "${msg}"`, [ctx]);}else r=offlineReply(msg,t);chatHistory[chatHistory.length-1]={role:'assistant',content:r};}
+  catch{chatHistory[chatHistory.length-1]={role:'assistant',content:'Could not connect. Try again.'};}
+  chatLoading=false;renderChat();
+}
+function buildCtx(t){
+  const ccs=(D.cards||[]).filter(c=>c.cc).map(c=>{const e=getLatestCardEntry(c.id);return`${c.name}:${e?$f(e.balance):'?'}`;}).join(', ');
+  const top=[...t.cats].sort((a,b)=>b.eff-a.eff).slice(0,4).map(c=>`${c.emoji}${c.label}:${$f(c.eff)}`).join(',');
+  const jCounts={};(D.transactions||[]).forEach(t=>{const j=t.justification||'none';jCounts[j]=(jCounts[j]||0)+1;});
+  return`Income:${$f(D.settings.income)}, Needs:${$f(t.N)}(${pf(t.Np)}), Wants:${$f(t.W)}(${pf(t.Wp)}), Savings:${$f(t.S)}(${pf(t.Sp)}), Surplus:${$f(t.left)}, Charges:${(D.transactions||[]).length}, CC Balances:${ccs}, Top:${top}, Justifications:${JSON.stringify(jCounts)}`;
+}
+function offlineReply(msg,t){
+  const ml=msg.toLowerCase();
+  if(ml.includes('card')||ml.includes('credit'))return`Go to 💳 Credit Cards section and tap "Update" on any card to enter today's balance. Due dates and amounts are also editable there.`;
+  if(ml.includes('receipt')||ml.includes('item'))return`When adding a charge (💳 button), tap "Add receipt items" to enter individual line items. They sum to the total automatically.`;
+  if(ml.includes('impulse')||ml.includes('justif'))return`Open the Transactions section to see why each charge was made. In the Add Charge modal, pick a justification like "Impulse buy" or add your own.`;
+  if(ml.includes('charge')||ml.includes('add'))return`Tap 💳 (bottom-left) to add a charge. Enter the date, amount, card used, category, justification, and optionally individual receipt items.`;
+  return`Surplus: ${$f(t.left)}/mo. Needs at ${pf(t.Np)} (target ${D.settings.goals.needs}%), Wants at ${pf(t.Wp)} (target ${D.settings.goals.wants}%). Add charges via the 💳 button.`;
+}
+
+render();
+</script>
+</body>
+</html>

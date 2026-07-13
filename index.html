@@ -81,8 +81,8 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 .snap-val{font-size:21px;font-weight:800;line-height:1;}
 .snap-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .budget-layout{display:grid;gap:14px;}
-@media(min-width:520px){.budget-layout{grid-template-columns:1fr 175px;}}
-.chart-box{height:165px;position:relative;}
+@media(min-width:560px){.budget-layout{grid-template-columns:1fr 200px;}}
+.chart-box{position:relative;display:flex;align-items:center;justify-content:center;padding:6px 0;}
 
 /* DAILY TRACKER LIST */
 .daily-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
@@ -816,11 +816,13 @@ function sectBudget(t){
   <div><div class="chart-box">${budgetDonutSVG(t)}</div></div></div>`;
 }
 function budgetDonutSVG(t){
+  // Surplus intentionally avoids the amber "warning" tone used elsewhere (over-target,
+  // due-soon, etc.) — leftover money is a good thing, not a caution signal.
   const slices=[
     {label:'Needs',  v:t.N,             color:'#0969da'},
     {label:'Wants',  v:t.W,             color:'#7c3aed'},
     {label:'Savings',v:t.S,             color:'#1a7f37'},
-    {label:'Surplus',v:Math.max(0,t.left),color:'#b45309'},
+    {label:'Surplus',v:Math.max(0,t.left),color:'#0891b2'},
   ].filter(s=>s.v>0);
   const total=slices.reduce((s,x)=>s+x.v,0)||1;
   const r=52,c=2*Math.PI*r,cx=70,cy=70;
@@ -832,10 +834,10 @@ function budgetDonutSVG(t){
     offset+=len;
     return el;
   }).join('');
-  const legend=slices.map(s=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;"></span>${s.label}</div>`).join('');
-  return`<div style="display:flex;align-items:center;gap:10px;height:100%;">
-    <svg width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;">${arcs}</svg>
-    <div style="display:flex;flex-direction:column;gap:5px;">${legend}</div>
+  const legend=slices.map(s=>`<div style="display:flex;align-items:center;gap:4px;font-size:10px;white-space:nowrap;"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;flex-shrink:0;"></span>${s.label}</div>`).join('');
+  return`<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <svg width="120" height="120" viewBox="0 0 140 140" style="flex-shrink:0;">${arcs}</svg>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;">${legend}</div>
   </div>`;
 }
 

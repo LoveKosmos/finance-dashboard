@@ -85,16 +85,11 @@ main{padding:10px 12px 100px;max-width:900px;margin:0 auto;}
 .chart-box{position:relative;display:flex;align-items:center;justify-content:center;padding:6px 0;}
 
 /* DAILY TRACKER LIST */
-.daily-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.day-row{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;}
-.day-row:last-child{border-bottom:none;}
-.day-row:hover{background:var(--surface2);}
-.day-row.today{background:var(--blue-bg);}
-.day-row-date{flex:1;font-weight:600;display:flex;align-items:center;gap:6px;}
+.daily-list{display:flex;flex-direction:column;gap:10px;}
+.day-card{border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface);}
+.day-card.today{border-color:var(--blue);}
 .today-badge{font-size:9px;background:var(--blue);color:#fff;padding:2px 6px;border-radius:8px;font-weight:600;}
-.day-row-spent{font-size:11px;}
-.day-row-bal{font-weight:700;min-width:70px;text-align:right;}
-.day-detail{padding:10px 14px 14px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.day-detail{margin-top:4px;padding-top:10px;border-top:1px solid var(--border);}
 .daily-fixed-list{margin-bottom:10px;}
 .daily-sub-label{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;}
 .daily-item-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
@@ -484,7 +479,6 @@ let itemsOpen=false;
 let editingTxnId=null;
 let dailyViewYear=new Date().getFullYear();
 let dailyViewMonthIdx=new Date().getMonth();
-let dailyExpandedDate=todayStr();
 let dailyTxnOpenDate=null;
 
 // ── PERSISTENCE ─────────────────────────────────────
@@ -716,75 +710,72 @@ function sectDailyTracker(){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const s=getDailyStats(dateStr);
     const isToday=dateStr===today;
-    const isExp=dailyExpandedDate===dateStr;
     const dLabel=new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
     const balClr=s.balanceEOD>=0?'c-green':'c-yellow';
+    const carryClr=s.carryIn>=0?'c-green':'c-yellow';
     const todaysFixed=fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,daysInMonth)===day);
+    const spentTxnOpen=dailyTxnOpenDate===dateStr;
+    const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
+    const barClr=s.balanceEOD>=0?'#1a7f37':'#b45309';
 
-    const summary=`<div class="day-row ${isToday?'today':''}" onclick="toggleDailyDay('${dateStr}')">
-      ${icon(isExp?'chevronup':'chevron',12)}
-      <span class="day-row-date">${dLabel}${isToday?'<span class="today-badge">Today</span>':''}</span>
-      <span class="day-row-spent c-muted">${$f(s.todaySpend)} spent</span>
-      <span class="day-row-bal ${balClr}">${sgn(s.balanceEOD)}</span>
+    const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;">${dLabel}${isToday?'<span class="today-badge" style="margin-left:6px;">Today</span>':''}</div>
     </div>`;
 
-    let detail='';
-    if(isExp){
-      const carryClr=s.carryIn>=0?'c-green':'c-yellow';
-      const spentTxnOpen=dailyTxnOpenDate===dateStr;
-      const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
-      const barClr=s.balanceEOD>=0?'#1a7f37':'#b45309';
-      const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
-        <div class="snap-box"><div class="snap-label">Carry In</div><div class="snap-val ${carryClr}" style="font-size:16px;">${sgn(s.carryIn)}</div><div class="snap-sub">${day===1?'start of month':'from yesterday'}</div></div>
-        <div class="snap-box"><div class="snap-label">+ Budget</div><div class="snap-val c-blue" style="font-size:16px;">$${s.db}</div><div class="snap-sub">daily allowance</div></div>
-        <div class="snap-box" style="cursor:pointer;" onclick="event.stopPropagation();toggleDailyTxns('${dateStr}')">
-          <div class="snap-label">− Spent ${icon(spentTxnOpen?'chevronup':'chevron',10)}</div>
-          <div class="snap-val ${s.todaySpend>0?'c-yellow':'c-muted'}" style="font-size:16px;">${$f(s.todaySpend)}</div>
-          <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?' + fixed bills':''}</div>
-        </div>
-        <div class="snap-box"><div class="snap-label">= Balance</div><div class="snap-val ${balClr}" style="font-size:16px;">${sgn(s.balanceEOD)}</div><div class="snap-sub">${s.balanceEOD>=0?'carries forward':'deficit'}</div></div>
+    const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
+      <div class="snap-box"><div class="snap-label">Carry In</div><div class="snap-val ${carryClr}" style="font-size:16px;">${sgn(s.carryIn)}</div><div class="snap-sub">${day===1?'start of month':'from yesterday'}</div></div>
+      <div class="snap-box"><div class="snap-label">+ Budget</div><div class="snap-val c-blue" style="font-size:16px;">$${s.db}</div><div class="snap-sub">daily allowance</div></div>
+      <div class="snap-box" style="cursor:pointer;" onclick="toggleDailyTxns('${dateStr}')">
+        <div class="snap-label">− Spent ${icon(spentTxnOpen?'chevronup':'chevron',10)}</div>
+        <div class="snap-val ${s.todaySpend>0?'c-yellow':'c-muted'}" style="font-size:16px;">${$f(s.todaySpend)}</div>
+        <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?' + fixed bills':''}</div>
       </div>
-      <div style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;">
-          <span>Available: ${sgn(s.carryIn)} carry + $${s.db} = <strong style="color:var(--text);">${$f(s.availableToday)}</strong></span>
-          <span>${$f(s.todaySpend)} spent</span>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;height:10px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${barClr};border-radius:3px;"></div>
-        </div>
-      </div>`;
+      <div class="snap-box"><div class="snap-label">= Balance</div><div class="snap-val ${balClr}" style="font-size:16px;">${sgn(s.balanceEOD)}</div><div class="snap-sub">${s.balanceEOD>=0?'carries forward':'deficit'}</div></div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;">
+        <span>Available: ${sgn(s.carryIn)} carry + $${s.db} = <strong style="color:var(--text);">${$f(s.availableToday)}</strong></span>
+        <span>${$f(s.todaySpend)} spent</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;height:10px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${barClr};border-radius:3px;"></div>
+      </div>
+    </div>`;
+
+    let dropdown='';
+    if(spentTxnOpen){
       const fixedList=todaysFixed.length?`<div class="daily-fixed-list">
         <div class="daily-sub-label">Fixed bills charging today</div>
         ${todaysFixed.map(c=>`<div class="daily-item-row"><span>${icon(c.icon)}</span><div class="daily-item-label">${c.label}</div><div class="daily-item-amt">${$f(n(moVal(c,month)),2)}</div></div>`).join('')}
       </div>`:'';
       let txnList='';
-      if(spentTxnOpen){
-        if(!s.todayTxns.length){
-          txnList=`<div class="daily-empty">No logged charges on this day.<br>
-            <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge for ${dLabel}</button>
+      if(!s.todayTxns.length){
+        txnList=`<div class="daily-empty">No logged charges on this day.<br>
+          <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="openChargeModalForDate('${dateStr}')">Add Charge for ${dLabel}</button>
+        </div>`;
+      }else{
+        const canPrev=day>1,canNext=day<daysInMonth;
+        const rows=s.todayTxns.map(t=>{
+          const cat=catMap[t.catId]||{icon:'folder',label:t.catId};
+          const card=cardMap[t.cardId];
+          const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
+          return`<div class="daily-item-row">
+            <span>${icon(cat.icon)}</span>
+            <div class="daily-item-label">${cat.label}${meta?`<div class="daily-item-meta">${meta}</div>`:''}</div>
+            <div class="daily-item-amt">${$f(n(t.amount),2)}
+              <button class="btn btn-ghost btn-xs" onclick="moveTxnDay('${t.id}',-1)" title="Move to previous day" ${canPrev?'':'disabled'}>←</button>
+              <button class="btn btn-ghost btn-xs" onclick="moveTxnDay('${t.id}',1)" title="Move to next day" ${canNext?'':'disabled'}>→</button>
+            </div>
           </div>`;
-        }else{
-          const rows=s.todayTxns.map(t=>{
-            const cat=catMap[t.catId]||{icon:'folder',label:t.catId};
-            const card=cardMap[t.cardId];
-            const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
-            return`<div class="daily-item-row">
-              <span>${icon(cat.icon)}</span>
-              <div class="daily-item-label">${cat.label}${meta?`<div class="daily-item-meta">${meta}</div>`:''}</div>
-              <div class="daily-item-amt">${$f(n(t.amount),2)}
-                <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();moveTxnToNextDay('${t.id}')" title="Count toward tomorrow">${icon('chevron',10)}</button>
-              </div>
-            </div>`;
-          }).join('');
-          txnList=`<div>${rows}</div>
-            <div style="display:flex;justify-content:flex-end;padding-top:8px;">
-              <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge</button>
-            </div>`;
-        }
+        }).join('');
+        txnList=`<div>${rows}</div>
+          <div style="display:flex;justify-content:flex-end;padding-top:8px;">
+            <button class="btn btn-blue btn-sm" onclick="openChargeModalForDate('${dateStr}')">Add Charge</button>
+          </div>`;
       }
-      detail=`<div class="day-detail">${boxes}${fixedList}${txnList}</div>`;
+      dropdown=`<div class="day-detail">${fixedList}${txnList}</div>`;
     }
-    dayRows.push(summary+detail);
+    dayRows.push(`<div class="day-card ${isToday?'today':''}">${header}${boxes}${dropdown}</div>`);
   }
 
   return nav+mStrip+`<div class="daily-list">${dayRows.join('')}</div>`;
@@ -796,11 +787,6 @@ function dailyNav(dir){
   if(dailyViewMonthIdx>11){dailyViewMonthIdx=0;dailyViewYear++;}
   render();
 }
-function toggleDailyDay(dateStr){
-  dailyExpandedDate=dailyExpandedDate===dateStr?null:dateStr;
-  dailyTxnOpenDate=null;
-  render();
-}
 function toggleDailyTxns(dateStr){
   dailyTxnOpenDate=dailyTxnOpenDate===dateStr?null:dateStr;
   render();
@@ -809,11 +795,11 @@ function openChargeModalForDate(dateStr){
   openChargeModal();
   setTimeout(()=>{const el=document.getElementById('c-date');if(el)el.value=dateStr;},80);
 }
-function moveTxnToNextDay(txnId){
+function moveTxnDay(txnId,dir){
   const txn=(D.transactions||[]).find(t=>t.id===txnId);
   if(!txn)return;
   const d=new Date(txn.date+'T00:00:00');
-  d.setDate(d.getDate()+1);
+  d.setDate(d.getDate()+dir);
   txn.date=d.toISOString().split('T')[0];
   const mi=dateToMi(txn.date);
   if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);D.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.mo[mi]===undefined)c.mo[mi]=0;});}

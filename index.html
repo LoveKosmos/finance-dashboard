@@ -485,6 +485,7 @@ let editingTxnId=null;
 let dailyViewYear=new Date().getFullYear();
 let dailyViewMonthIdx=new Date().getMonth();
 let dailyExpandedDate=todayStr();
+let dailyTxnOpenDate=null;
 
 // ── PERSISTENCE ─────────────────────────────────────
 // No versioned migrations. ensureShape() runs on every load, is safe to run
@@ -729,34 +730,59 @@ function sectDailyTracker(){
 
     let detail='';
     if(isExp){
+      const carryClr=s.carryIn>=0?'c-green':'c-yellow';
+      const spentTxnOpen=dailyTxnOpenDate===dateStr;
+      const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
+      const barClr=s.balanceEOD>=0?'#1a7f37':'#b45309';
+      const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
+        <div class="snap-box"><div class="snap-label">Carry In</div><div class="snap-val ${carryClr}" style="font-size:16px;">${sgn(s.carryIn)}</div><div class="snap-sub">${day===1?'start of month':'from yesterday'}</div></div>
+        <div class="snap-box"><div class="snap-label">+ Budget</div><div class="snap-val c-blue" style="font-size:16px;">$${s.db}</div><div class="snap-sub">daily allowance</div></div>
+        <div class="snap-box" style="cursor:pointer;" onclick="event.stopPropagation();toggleDailyTxns('${dateStr}')">
+          <div class="snap-label">− Spent ${icon(spentTxnOpen?'chevronup':'chevron',10)}</div>
+          <div class="snap-val ${s.todaySpend>0?'c-yellow':'c-muted'}" style="font-size:16px;">${$f(s.todaySpend)}</div>
+          <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?' + fixed bills':''}</div>
+        </div>
+        <div class="snap-box"><div class="snap-label">= Balance</div><div class="snap-val ${balClr}" style="font-size:16px;">${sgn(s.balanceEOD)}</div><div class="snap-sub">${s.balanceEOD>=0?'carries forward':'deficit'}</div></div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;">
+          <span>Available: ${sgn(s.carryIn)} carry + $${s.db} = <strong style="color:var(--text);">${$f(s.availableToday)}</strong></span>
+          <span>${$f(s.todaySpend)} spent</span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;height:10px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${barClr};border-radius:3px;"></div>
+        </div>
+      </div>`;
       const fixedList=todaysFixed.length?`<div class="daily-fixed-list">
         <div class="daily-sub-label">Fixed bills charging today</div>
         ${todaysFixed.map(c=>`<div class="daily-item-row"><span>${icon(c.icon)}</span><div class="daily-item-label">${c.label}</div><div class="daily-item-amt">${$f(n(moVal(c,month)),2)}</div></div>`).join('')}
       </div>`:'';
       let txnList='';
-      if(!s.todayTxns.length){
-        txnList=`<div class="daily-empty">No logged charges on this day.<br>
-          <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge for ${dLabel}</button>
-        </div>`;
-      }else{
-        const rows=s.todayTxns.map(t=>{
-          const cat=catMap[t.catId]||{icon:'folder',label:t.catId};
-          const card=cardMap[t.cardId];
-          const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
-          return`<div class="daily-item-row">
-            <span>${icon(cat.icon)}</span>
-            <div class="daily-item-label">${cat.label}${meta?`<div class="daily-item-meta">${meta}</div>`:''}</div>
-            <div class="daily-item-amt">${$f(n(t.amount),2)}
-              <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();moveTxnToNextDay('${t.id}')" title="Count toward tomorrow">${icon('chevron',10)}</button>
-            </div>
+      if(spentTxnOpen){
+        if(!s.todayTxns.length){
+          txnList=`<div class="daily-empty">No logged charges on this day.<br>
+            <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge for ${dLabel}</button>
           </div>`;
-        }).join('');
-        txnList=`<div>${rows}</div>
-          <div style="display:flex;justify-content:flex-end;padding-top:8px;">
-            <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge</button>
-          </div>`;
+        }else{
+          const rows=s.todayTxns.map(t=>{
+            const cat=catMap[t.catId]||{icon:'folder',label:t.catId};
+            const card=cardMap[t.cardId];
+            const meta=[t.desc,card?card.name:null,t.justification].filter(Boolean).join(' · ');
+            return`<div class="daily-item-row">
+              <span>${icon(cat.icon)}</span>
+              <div class="daily-item-label">${cat.label}${meta?`<div class="daily-item-meta">${meta}</div>`:''}</div>
+              <div class="daily-item-amt">${$f(n(t.amount),2)}
+                <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();moveTxnToNextDay('${t.id}')" title="Count toward tomorrow">${icon('chevron',10)}</button>
+              </div>
+            </div>`;
+          }).join('');
+          txnList=`<div>${rows}</div>
+            <div style="display:flex;justify-content:flex-end;padding-top:8px;">
+              <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();openChargeModalForDate('${dateStr}')">Add Charge</button>
+            </div>`;
+        }
       }
-      detail=`<div class="day-detail">${fixedList}${txnList}</div>`;
+      detail=`<div class="day-detail">${boxes}${fixedList}${txnList}</div>`;
     }
     dayRows.push(summary+detail);
   }
@@ -772,6 +798,11 @@ function dailyNav(dir){
 }
 function toggleDailyDay(dateStr){
   dailyExpandedDate=dailyExpandedDate===dateStr?null:dateStr;
+  dailyTxnOpenDate=null;
+  render();
+}
+function toggleDailyTxns(dateStr){
+  dailyTxnOpenDate=dailyTxnOpenDate===dateStr?null:dateStr;
   render();
 }
 function openChargeModalForDate(dateStr){

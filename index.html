@@ -466,7 +466,8 @@ const DEFAULT={
   ],
   sectionOrder:['snapshot','dailytracker','budget','creditcards','transactions','settings','categories','leaks','fixed','accounts'],
   collapsed:['categories','leaks','fixed','accounts'],
-  filter:{activeMonths:[...H1]}
+  filter:{activeMonths:[...H1]},
+  dailyBudgetOverrides:{}
 };
 
 let D=loadData();
@@ -513,6 +514,7 @@ function ensureShape(d){
   if(!d.sectionOrder)d.sectionOrder=[...DEFAULT.sectionOrder];
   if(!d.collapsed)d.collapsed=[...DEFAULT.collapsed];
   if(!d.filter||!d.filter.activeMonths)d.filter={activeMonths:[...d.months]};
+  if(!d.dailyBudgetOverrides)d.dailyBudgetOverrides={};
 
   // Growth: make the real current month available to track (does NOT touch
   // d.filter — a newly-tracked month is only ever added to the picker, never
@@ -646,10 +648,25 @@ function fixedChargesThroughDay(mi,throughDay,daysInMonth){
   return fixedCatsForMonth().filter(c=>Math.min(c.chargeDay||1,daysInMonth)<=throughDay)
     .reduce((s,c)=>s+n(moVal(c,mi)),0);
 }
+// Per-day budget overrides let a specific date (e.g. a day with a known big
+// expense coming) use a different daily allowance than the global default —
+// the override amount flows into every downstream carry/pool calculation.
+function dailyBudgetFor(dateStr){
+  const ov=D.dailyBudgetOverrides&&D.dailyBudgetOverrides[dateStr];
+  return ov!==undefined&&ov!==null?n(ov):D.settings.dailyBudget;
+}
+function budgetSumThroughDay(year,month,throughDay){
+  let sum=0;
+  for(let dd=1;dd<=throughDay;dd++){
+    sum+=dailyBudgetFor(`${year}-${String(month+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`);
+  }
+  return sum;
+}
 function getDailyStats(dateStr){
   const d=new Date(dateStr+'T00:00:00');
   const year=d.getFullYear(),month=d.getMonth(),dayNum=d.getDate();
-  const db=D.settings.dailyBudget;
+  const db=dailyBudgetFor(dateStr);
+  const hasBudgetOverride=!!(D.dailyBudgetOverrides&&D.dailyBudgetOverrides[dateStr]!==undefined);
   const daysInMonth=new Date(year,month+1,0).getDate();
   const fixedToday=fixedChargeOnDay(month,dayNum,daysInMonth);
   // Transactions this month up to & including this day
@@ -668,15 +685,24 @@ function getDailyStats(dateStr){
       const td=new Date(t.date+'T00:00:00');
       return td.getFullYear()===year&&td.getMonth()===month&&td.getDate()<=dayNum-1;
     });
-    carryIn=(dayNum-1)*db-(upToYest.reduce((s,t)=>s+n(t.amount),0)+fixedChargesThroughDay(month,dayNum-1,daysInMonth));
+    carryIn=budgetSumThroughDay(year,month,dayNum-1)-(upToYest.reduce((s,t)=>s+n(t.amount),0)+fixedChargesThroughDay(month,dayNum-1,daysInMonth));
   }
   const availableToday=carryIn+db;
   const balanceEOD=availableToday-todaySpend;
   const cumSpend=upTo.reduce((s,t)=>s+n(t.amount),0)+fixedChargesThroughDay(month,dayNum,daysInMonth);
-  const cumBudget=dayNum*db;
-  const monthPool=daysInMonth*db;
+  const cumBudget=budgetSumThroughDay(year,month,dayNum);
+  const monthPool=budgetSumThroughDay(year,month,daysInMonth);
   const fixedMonthTotal=fixedCatsForMonth().reduce((s,c)=>s+n(moVal(c,month)),0);
-  return{dateStr,dayNum,daysInMonth,monthPool,carryIn,db,availableToday,todaySpend,todayTxnSpend,fixedToday,fixedMonthTotal,balanceEOD,cumSpend,cumBudget,monthBalance:cumBudget-cumSpend,todayTxns};
+  return{dateStr,dayNum,daysInMonth,monthPool,carryIn,db,hasBudgetOverride,availableToday,todaySpend,todayTxnSpend,fixedToday,fixedMonthTotal,balanceEOD,cumSpend,cumBudget,monthBalance:cumBudget-cumSpend,todayTxns};
+}
+function editDayBudget(dateStr){
+  const cur=dailyBudgetFor(dateStr);
+  const v=prompt(`Daily budget for ${dateStr} (leave blank to use the default $${D.settings.dailyBudget})`,cur);
+  if(v===null)return;
+  if(!D.dailyBudgetOverrides)D.dailyBudgetOverrides={};
+  if(v.trim()===''){delete D.dailyBudgetOverrides[dateStr];}
+  else{D.dailyBudgetOverrides[dateStr]=Math.max(0,n(v));}
+  saveData();render();
 }
 
 function sectDailyTracker(){
@@ -698,8 +724,9 @@ function sectDailyTracker(){
   const lastDateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
   const ms=getDailyStats(lastDateStr);
   const mbClr=ms.monthBalance>=0?'c-green':'c-yellow';
+  const overrideCount=Object.keys(D.dailyBudgetOverrides||{}).filter(k=>k.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).length;
   const mStrip=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-bottom:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;align-items:center;">
-    <span><span class="c-muted">Pool:</span> <strong>${$f(ms.monthPool)}</strong> <span class="c-muted">(${daysInMonth}d × $${D.settings.dailyBudget})</span></span>
+    <span><span class="c-muted">Pool:</span> <strong>${$f(ms.monthPool)}</strong> <span class="c-muted">(${daysInMonth}d × $${D.settings.dailyBudget}${overrideCount?`, ${overrideCount} custom`:''})</span></span>
     <span><span class="c-muted">Spent this month:</span> <strong class="${ms.cumSpend>ms.cumBudget?'c-yellow':'c-green'}">${$f(ms.cumSpend)}</strong></span>
     <span><span class="c-muted">Running:</span> <strong class="${mbClr}">${sgn(ms.monthBalance)}</strong></span>
     <span><span class="c-muted">Fixed bills this month (excl. rent):</span> <strong>${$f(ms.fixedMonthTotal)}</strong></span>
@@ -718,18 +745,21 @@ function sectDailyTracker(){
     const pct=s.availableToday>0?Math.min(s.todaySpend/s.availableToday*100,100):s.todaySpend>0?100:0;
     const barClr=s.balanceEOD>=0?'#1a7f37':'#b45309';
 
-    const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
       <div style="font-size:13px;font-weight:700;">${dLabel}${isToday?'<span class="today-badge" style="margin-left:6px;">Today</span>':''}</div>
+      <button class="btn ${spentTxnOpen?'btn-blue':'btn-ghost'} btn-sm" onclick="toggleDailyTxns('${dateStr}')" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span class="c-muted">Spent</span> <strong>${$f(s.todaySpend)}</strong> ${icon(spentTxnOpen?'chevronup':'chevron',12)}
+      </button>
     </div>`;
 
     const boxes=`<div class="snap-grid" style="margin-bottom:10px;">
       <div class="snap-box"><div class="snap-label">Carry In</div><div class="snap-val ${carryClr}" style="font-size:16px;">${sgn(s.carryIn)}</div><div class="snap-sub">${day===1?'start of month':'from yesterday'}</div></div>
-      <div class="snap-box"><div class="snap-label">+ Budget</div><div class="snap-val c-blue" style="font-size:16px;">$${s.db}</div><div class="snap-sub">daily allowance</div></div>
-      <div class="snap-box" style="cursor:pointer;" onclick="toggleDailyTxns('${dateStr}')">
-        <div class="snap-label">− Spent ${icon(spentTxnOpen?'chevronup':'chevron',10)}</div>
-        <div class="snap-val ${s.todaySpend>0?'c-yellow':'c-muted'}" style="font-size:16px;">${$f(s.todaySpend)}</div>
-        <div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?' + fixed bills':''}</div>
+      <div class="snap-box" style="cursor:pointer;" onclick="editDayBudget('${dateStr}')" title="Click to set a custom budget for this day">
+        <div class="snap-label">+ Budget</div>
+        <div class="snap-val c-blue" style="font-size:16px;">$${s.db}</div>
+        <div class="snap-sub ${s.hasBudgetOverride?'c-blue':''}">${s.hasBudgetOverride?'custom':'daily allowance'}</div>
       </div>
+      <div class="snap-box"><div class="snap-label">− Spent</div><div class="snap-val ${s.todaySpend>0?'c-yellow':'c-muted'}" style="font-size:16px;">${$f(s.todaySpend)}</div><div class="snap-sub">${s.todayTxns.length} charge${s.todayTxns.length!==1?'s':''}${s.fixedToday>0?' + fixed bills':''}</div></div>
       <div class="snap-box"><div class="snap-label">= Balance</div><div class="snap-val ${balClr}" style="font-size:16px;">${sgn(s.balanceEOD)}</div><div class="snap-sub">${s.balanceEOD>=0?'carries forward':'deficit'}</div></div>
     </div>
     <div style="margin-bottom:10px;">
@@ -744,9 +774,13 @@ function sectDailyTracker(){
 
     let dropdown='';
     if(spentTxnOpen){
+      const fCanPrev=(c)=>(c.chargeDay||1)>1,fCanNext=(c)=>(c.chargeDay||1)<31;
       const fixedList=todaysFixed.length?`<div class="daily-fixed-list">
         <div class="daily-sub-label">Fixed bills charging today</div>
-        ${todaysFixed.map(c=>`<div class="daily-item-row"><span>${icon(c.icon)}</span><div class="daily-item-label">${c.label}</div><div class="daily-item-amt">${$f(n(moVal(c,month)),2)}</div></div>`).join('')}
+        ${todaysFixed.map(c=>`<div class="daily-item-row"><span>${icon(c.icon)}</span><div class="daily-item-label">${c.label}</div><div class="daily-item-amt">${$f(n(moVal(c,month)),2)}
+          <button class="btn btn-ghost btn-xs" onclick="moveFixedChargeDay('${c.id}',-1)" title="Move charge day earlier" ${fCanPrev(c)?'':'disabled'}>←</button>
+          <button class="btn btn-ghost btn-xs" onclick="moveFixedChargeDay('${c.id}',1)" title="Move charge day later" ${fCanNext(c)?'':'disabled'}>→</button>
+        </div></div>`).join('')}
       </div>`:'';
       let txnList='';
       if(!s.todayTxns.length){
@@ -804,6 +838,12 @@ function moveTxnDay(txnId,dir){
   const mi=dateToMi(txn.date);
   if(!D.months.includes(mi)){D.months.push(mi);D.months.sort((a,b)=>a-b);D.categories.forEach(c=>{if(!c.mo)c.mo={};if(c.mo[mi]===undefined)c.mo[mi]=0;});}
   if(!D.filter.activeMonths.includes(mi)){D.filter.activeMonths.push(mi);D.filter.activeMonths.sort((a,b)=>a-b);}
+  saveData();render();
+}
+function moveFixedChargeDay(catId,dir){
+  const c=D.categories.find(x=>x.id===catId);
+  if(!c)return;
+  c.chargeDay=Math.max(1,Math.min(31,(c.chargeDay||1)+dir));
   saveData();render();
 }
 

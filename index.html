@@ -566,8 +566,17 @@ function compute(){
 }
 
 // ── CARD BALANCE HELPERS ─────────────────────────────
+// Sort by exact save time (ts), not just the date — same-day entries have
+// identical dates, and a date-only sort is stable, so it silently kept the
+// OLDEST same-day save instead of the newest. ts falls back to id's embedded
+// timestamp (clog_<ms>) for older entries saved before ts existed.
+function cardLogTs(e){
+  if(e.ts)return e.ts;
+  const m=/^clog_(\d+)/.exec(e.id||'');
+  return m?Number(m[1]):new Date(e.date).getTime();
+}
 function getLatestCardEntry(cardId){
-  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>cardLogTs(b)-cardLogTs(a));
   return entries[0]||null;
 }
 function daysUntilDue(dueDay){
@@ -1206,7 +1215,7 @@ function submitCC(){
   const notes=document.getElementById('cc-notes').value.trim();
   if(!ccModalCardId)return;
   if(!D.cardLog)D.cardLog=[];
-  D.cardLog.push({id:'clog_'+Date.now(),cardId:ccModalCardId,date:todayStr(),balance:bal,dueDay,dueAmt,notes});
+  D.cardLog.push({id:'clog_'+Date.now(),ts:Date.now(),cardId:ccModalCardId,date:todayStr(),balance:bal,dueDay,dueAmt,notes});
   // Update card's dueDay setting
   const card=(D.cards||[]).find(c=>c.id===ccModalCardId);
   if(card&&dueDay)card.dueDay=dueDay;
@@ -1214,8 +1223,8 @@ function submitCC(){
 }
 function viewCardHistory(cardId){
   const card=(D.cards||[]).find(c=>c.id===cardId);
-  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
-  alert(`${card?.name||cardId} — Last 10 entries:\n\n`+entries.map(e=>`${e.date}: $${$f(n(e.balance),2)}${e.dueAmt?` (due $${$f(n(e.dueAmt),2)})`:''}`).join('\n'));
+  const entries=(D.cardLog||[]).filter(e=>e.cardId===cardId).sort((a,b)=>cardLogTs(b)-cardLogTs(a)).slice(0,10);
+  alert(`${card?.name||cardId} — Last 10 entries:\n\n`+entries.map(e=>`${e.date}: $${$f(n(e.balance),2)}${e.dueAmt?` (due $${$f(n(e.dueAmt),2)})`:''}${e.dueDay?` — due ${ordinal(e.dueDay)}`:''}`).join('\n'));
 }
 function ordinal(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 
